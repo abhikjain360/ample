@@ -1,13 +1,23 @@
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum Error {
-    #[error("no default audio device found")]
-    DefaultAudioDevice,
-    #[error("unable to fetch supported configs")]
-    SupportedAudioConfigsFetch(#[from] cpal::SupportedStreamConfigsError),
-    #[error("unable to build stream to the default audio device")]
-    BuildStream(#[from] cpal::BuildStreamError),
-    #[error("default audio device supports no configs")]
-    SupportedAudioConfigs,
-    #[error("unsupported device")]
-    UnsupportedDevice,
+    #[error("stream error: {0}")]
+    StreamInitError(#[from] crate::stream::StreamInitError),
+    #[error("unable to load settings: {0}")]
+    SettingsInitError(#[from] crate::settings::SettingsInitError),
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("I/O error ({kind}): {message}")]
+pub(crate) struct IoError {
+    kind: std::io::ErrorKind,
+    message: String,
+}
+
+impl From<std::io::Error> for IoError {
+    fn from(err: std::io::Error) -> Self {
+        Self {
+            kind: err.kind(),
+            message: err.to_string(),
+        }
+    }
 }

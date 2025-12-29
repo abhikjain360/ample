@@ -1,5 +1,6 @@
 pub(crate) enum StreamStatus {
     Uninitialized,
     Active(cpal::Stream),
-    StreamError(cpal::StreamError),
+    #[expect(dead_code)]
+    StreamError(super::StreamError),
 }
