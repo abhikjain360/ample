@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     path::PathBuf,
-    sync::{Arc, RwLock},
+    sync::Arc,
 };
 
 pub(crate) use dirtree::DirTree;
@@ -13,11 +13,11 @@ mod file;
 #[derive(Default, Debug)]
 pub(crate) struct Library {
     arena: HashMap<usize, DirTree>,
-    files: HashMap<PathBuf, File>,
+    pub(crate) files: Vec<File>,
 }
 
 impl Library {
-    pub(crate) async fn walker(path: PathBuf) -> Result<Arc<RwLock<Self>>, crate::IoError> {
+    pub(crate) async fn walker(path: PathBuf) -> Result<Arc<Self>, crate::IoError> {
         let mut me = Self::default();
 
         let root = DirTree::new(path);
@@ -42,6 +42,7 @@ impl Library {
 
                 if path.is_dir() {
                     me.arena.insert(id, DirTree::new(path));
+                    to_explore.push_back(id);
                     continue;
                 }
 
@@ -50,12 +51,18 @@ impl Library {
                 }
 
                 let file_path = path.clone();
-                let Ok(Ok(file)) = tokio::task::spawn_blocking(move || File::new(file_path)).await
+                let Ok(Ok(file)) = tokio::task::spawn_blocking(move || File::new(file_path))
+                    .await
+                    .inspect_err(|e| {
+                        tracing::error!(
+                            "metadata read job ended unsuccessfully for file {path:?}: {e}"
+                        )
+                    })
                 else {
                     continue;
                 };
 
-                me.files.insert(path.clone(), file);
+                me.files.push(file);
                 children.push(path);
             }
 
@@ -65,6 +72,8 @@ impl Library {
             );
         }
 
-        Ok(Arc::new(RwLock::new(me)))
+        me.files.sort_by(|a, b| a.path.cmp(&b.path));
+
+        Ok(Arc::new(me))
     }
 }

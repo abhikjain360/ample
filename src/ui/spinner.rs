@@ -1,12 +1,16 @@
+use std::{
+    f32::consts::PI,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use iced::{
     Element, Event, Length, Radians, Renderer, Theme, mouse,
     widget::{
         Canvas,
-        canvas::{self, Action, Cache, Geometry, Path, Stroke},
+        canvas::{self, Action, Frame, Geometry, Path, Stroke},
         center,
     },
 };
-use std::f32::consts::PI;
 
 use crate::Message;
 
@@ -16,7 +20,7 @@ const ARC_LENGTH: f32 = PI * 1.5;
 
 pub fn view() -> Element<'static, Message> {
     center(
-        Canvas::new(SpinnerCanvas::default())
+        Canvas::new(SpinnerCanvas)
             .width(Length::Fixed(SPINNER_SIZE))
             .height(Length::Fixed(SPINNER_SIZE)),
     )
@@ -25,65 +29,61 @@ pub fn view() -> Element<'static, Message> {
     .into()
 }
 
-#[derive(Debug, Default)]
-struct SpinnerCanvas {
-    cache: Cache,
-}
-
-#[derive(Debug, Default)]
-pub struct SpinnerState {
-    rotation: f32,
-}
+#[derive(Debug)]
+struct SpinnerCanvas;
 
 impl canvas::Program<Message> for SpinnerCanvas {
-    type State = SpinnerState;
+    type State = ();
 
     fn update(
         &self,
-        state: &mut Self::State,
+        _state: &mut Self::State,
         _event: &Event,
         _bounds: iced::Rectangle,
         _cursor: mouse::Cursor,
     ) -> Option<Action<Message>> {
-        state.rotation += 0.06;
-        if state.rotation > 2.0 * PI {
-            state.rotation -= 2.0 * PI;
-        }
-        Some(Action::request_redraw())
+        None
     }
 
     fn draw(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         renderer: &Renderer,
         theme: &Theme,
         bounds: iced::Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<Geometry<Renderer>> {
-        let spinner = self.cache.draw(renderer, bounds.size(), |frame| {
-            let center = frame.center();
-            let radius = (SPINNER_SIZE / 2.0) - (STROKE_WIDTH / 2.0);
+        let mut frame = Frame::new(renderer, bounds.size());
 
-            let palette = theme.palette();
+        let center = frame.center();
+        let radius = (SPINNER_SIZE / 2.0) - (STROKE_WIDTH / 2.0);
 
-            let arc = Path::new(|builder| {
-                builder.arc(canvas::path::Arc {
-                    center,
-                    radius,
-                    start_angle: Radians(state.rotation),
-                    end_angle: Radians(state.rotation + ARC_LENGTH),
-                });
+        let palette = theme.palette();
+
+        let elapsed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            % 100_000;
+        let rotation = elapsed as f32 * 2.0 * PI / 3_000.0;
+
+        let arc = Path::new(|builder| {
+            builder.arc(canvas::path::Arc {
+                center,
+                radius,
+                start_angle: Radians(rotation),
+                end_angle: Radians(rotation + ARC_LENGTH),
             });
-
-            frame.stroke(
-                &arc,
-                Stroke::default()
-                    .with_width(STROKE_WIDTH)
-                    .with_color(palette.primary)
-                    .with_line_cap(canvas::LineCap::Round),
-            );
         });
 
-        vec![spinner]
+        frame.stroke(
+            &arc,
+            Stroke::default()
+                .with_width(STROKE_WIDTH)
+                .with_color(palette.primary)
+                .with_line_cap(canvas::LineCap::Round),
+        );
+
+        vec![frame.into_geometry()]
     }
 }

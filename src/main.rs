@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use iced::{Element, Task, Theme, widget};
 
 pub(crate) use crate::{
+    config::Config,
     error::{Error, IoError},
     library::*,
     message::Message,
@@ -22,22 +25,16 @@ mod state;
 mod ui;
 
 fn update(state: &mut State, message: Message) -> Task<Message> {
-    match (&mut state.status, message) {
-        (_, Message::Error(error)) => state.status = state::Status::UnrecoverableError(error),
+    use state::Status::*;
 
-        (state::Status::UnrecoverableError(e), _) => {
+    match (&mut state.status, message) {
+        (_, Message::Error(error)) => state.status = UnrecoverableError(error),
+
+        (UnrecoverableError(e), _) => {
             tracing::error!("unrecoverable error: {}", e);
         }
 
-        (state::Status::ShouldLoadLibrary(_), _) => {
-            tracing::error!("should load library");
-        }
-
-        (state::Status::Transistioning, _) => {
-            tracing::error!("transistioning");
-        }
-
-        (state::Status::Welcome(_), Message::ShowLibraryAdder) => {
+        (Welcome(_), Message::ShowLibraryAdder) => {
             tracing::info!("showing library selector");
             return Task::perform(
                 async {
@@ -50,7 +47,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             );
         }
 
-        (state::Status::Welcome(_), Message::LibraryLoaded(Result::Err(err))) => {
+        (Welcome(_), Message::LibraryLoaded(Result::Err(err))) => {
             tracing::error!("unable to load library: {err}");
             state.snackbar = Some(Snackbar::error(widget::text(format!(
                 "unable to load library: {err}"
@@ -99,16 +96,32 @@ fn update_with_ownership(state: &mut State, message: Message) -> Task<Message> {
             return Task::perform(Library::walker(path), Message::LibraryLoaded);
         }
 
-        (Welcome(settings), Message::LibraryLoaded(Ok(library))) => {
-            state.status = Idle(status::Idle { settings, library });
+        (ShouldLoadLibrary(status::ShouldLoadLibrary { settings, path }), Message::Tick) => {
+            state.status = LoadingLibrary(status::LoadingLibrary {
+                settings,
+                path: path.clone(),
+            });
+
+            tracing::info!("loading library: {}", path.display());
+            return Task::perform(Library::walker(path), Message::LibraryLoaded);
         }
 
-        (_, message) => {
+        (
+            LoadingLibrary(status::LoadingLibrary { settings, .. }),
+            Message::LibraryLoaded(Ok(library)),
+        ) => {
+            let library = Arc::try_unwrap(library).unwrap();
+            state.status = Home(status::Home { settings, library });
+        }
+
+        (status, Message::Tick) => state.status = status,
+
+        (status, message) => {
             tracing::error!(
-                "invalid message/state combination:\n\tstate={state:#?}\n\tmessage={message:#?}"
+                "invalid message/status combination:\n\tstatus={status:#?}\n\tmessage={message:#?}"
             );
             unreachable!(
-                "invalid message/state combination:\n\tstate={state:#?}\n\tmessage={message:#?}"
+                "invalid message/state combination:\n\tstatus={status:#?}\n\tmessage={message:#?}"
             )
         }
     }
@@ -121,7 +134,7 @@ fn view(state: &State) -> Element<'_, Message> {
 
     let elem = match &state.status {
         UnrecoverableError(error) => widget::text(format!("error: {error}")).into(),
-        Idle { .. } => widget::text("idle").into(),
+        Home(home) => ui::home::view(home),
         Welcome(opened) => ui::welcome::view(opened),
         LoadingLibrary(_) | Transistioning | ShouldLoadLibrary(_) => ui::spinner::view(),
     };
@@ -133,19 +146,35 @@ fn view(state: &State) -> Element<'_, Message> {
     elem
 }
 
+fn subscription(state: &State) -> iced::Subscription<Message> {
+    use state::Status::*;
+    match state.status {
+        LoadingLibrary(_) | Transistioning | ShouldLoadLibrary(_) => {
+            let millis = 1000 / state.config.refresh_rate;
+            iced::time::every(std::time::Duration::from_millis(millis)).map(|_| Message::Tick)
+        }
+        _ => iced::Subscription::none(),
+    }
+}
+
 fn main() -> iced::Result {
     let cli::Opts {
         log_file,
         settings_path,
-        ..
+        config_path,
     } = argh::from_env();
 
     log::init(log_file);
 
-    iced::application(move || State::new(settings_path.clone()), update, view)
-        .theme(Theme::CatppuccinMocha)
-        .font(font::FIRA_BOLD_BYTES)
-        .font(font::FIRA_REGULAR_BYTES)
-        .default_font(font::FIRA_REGULAR)
-        .run()
+    iced::application(
+        move || State::new(settings_path.clone(), config_path.clone()),
+        update,
+        view,
+    )
+    .subscription(subscription)
+    .theme(Theme::CatppuccinMocha)
+    .font(font::FIRA_BOLD_BYTES)
+    .font(font::FIRA_REGULAR_BYTES)
+    .default_font(font::FIRA_REGULAR)
+    .run()
 }

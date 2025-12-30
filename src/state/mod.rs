@@ -3,7 +3,7 @@ pub(crate) mod status;
 
 use std::path::PathBuf;
 
-use crate::{Error, Settings};
+use crate::{Config, Error, Settings};
 pub(crate) use snackbar::Snackbar;
 pub(crate) use status::Status;
 
@@ -11,16 +11,22 @@ pub(crate) use status::Status;
 pub(crate) struct State {
     pub(crate) snackbar: Option<Snackbar>,
     pub(crate) status: Status,
+    pub(crate) config: Config,
 }
 
 impl State {
-    pub(crate) fn new(settings_path: Option<PathBuf>) -> Self {
+    pub(crate) fn new(settings_path: Option<PathBuf>, config_path: Option<PathBuf>) -> Self {
+        let config = Config::load(config_path)
+            .inspect_err(|e| tracing::error!("error while loading config: {e}"))
+            .unwrap_or_default();
+
         let mut settings = match Settings::load_or_create(settings_path) {
             Ok(settings) => settings,
             Err(error) => {
                 return Self {
                     snackbar: None,
                     status: Status::UnrecoverableError(Error::SettingsInitError(error)),
+                    config,
                 };
             }
         };
@@ -30,6 +36,7 @@ impl State {
                 return Self {
                     snackbar: None,
                     status: Status::Welcome(settings),
+                    config,
                 };
             };
 
@@ -38,12 +45,14 @@ impl State {
                 continue;
             }
 
+            let path = library.clone();
             return Self {
                 snackbar: None,
                 status: Status::ShouldLoadLibrary(status::ShouldLoadLibrary {
-                    path: library.clone(),
+                    path: path.clone(),
                     settings,
                 }),
+                config,
             };
         }
     }

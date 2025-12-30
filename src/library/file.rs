@@ -3,8 +3,8 @@ use std::{fmt, path::PathBuf};
 use lofty::{file::TaggedFile, probe::Probe};
 
 pub(crate) struct File {
-    path: PathBuf,
-    metadata: TaggedFile,
+    pub(crate) path: PathBuf,
+    pub(crate) metadata: TaggedFile,
 }
 
 impl fmt::Debug for File {
