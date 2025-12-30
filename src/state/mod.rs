@@ -1,10 +1,11 @@
 pub(crate) mod snackbar;
 pub(crate) mod status;
 
-use crate::{Error, Settings, Stream, cli};
+use std::path::PathBuf;
+
+use crate::{Error, Settings};
 pub(crate) use snackbar::Snackbar;
-use status::Idle;
-pub(crate) use status::{Init, Status};
+pub(crate) use status::Status;
 
 #[derive(Debug)]
 pub(crate) struct State {
@@ -13,20 +14,8 @@ pub(crate) struct State {
 }
 
 impl State {
-    pub(crate) fn new() -> Self {
-        let stream = match Stream::new() {
-            Ok(stream) => stream,
-            Err(error) => {
-                return Self {
-                    snackbar: None,
-                    status: Status::UnrecoverableError(Error::StreamInitError(error)),
-                };
-            }
-        };
-
-        let opts: cli::Opts = argh::from_env();
-
-        let settings = match Settings::load_or_create(opts.settings_path) {
+    pub(crate) fn new(settings_path: Option<PathBuf>) -> Self {
+        let mut settings = match Settings::load_or_create(settings_path) {
             Ok(settings) => settings,
             Err(error) => {
                 return Self {
@@ -36,26 +25,24 @@ impl State {
             }
         };
 
-        let mut init = Init { stream, settings };
-
         loop {
-            let Some(library) = init.settings.libraries.front() else {
+            let Some(library) = settings.libraries.front() else {
                 return Self {
                     snackbar: None,
-                    status: Status::Welcome(init),
+                    status: Status::Welcome(settings),
                 };
             };
 
             if !library.is_dir() {
-                init.settings.libraries.pop_front();
+                settings.libraries.pop_front();
                 continue;
             }
 
             return Self {
                 snackbar: None,
-                status: Status::Idle(Idle {
+                status: Status::ShouldLoadLibrary(status::ShouldLoadLibrary {
                     path: library.clone(),
-                    init,
+                    settings,
                 }),
             };
         }

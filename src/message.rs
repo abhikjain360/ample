@@ -1,10 +1,14 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Arc, RwLock},
+};
 
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
     #[expect(dead_code)]
     Error(crate::Error),
+    CloseSnackbar,
     ShowLibraryAdder,
     SelectedLibrary(Option<PathBuf>),
-    CloseSnackbar,
+    LibraryLoaded(Result<Arc<RwLock<crate::Library>>, crate::IoError>),
 }

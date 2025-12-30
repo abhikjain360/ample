@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 #[derive(Debug)]
-pub(crate) struct LoadingLibrary {
+pub struct ShouldLoadLibrary {
     pub(crate) settings: crate::Settings,
     pub(crate) path: PathBuf,
 }

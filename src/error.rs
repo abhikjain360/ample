@@ -1,7 +1,5 @@
 #[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum Error {
-    #[error("stream error: {0}")]
-    StreamInitError(#[from] crate::stream::StreamInitError),
     #[error("unable to load settings: {0}")]
     SettingsInitError(#[from] crate::settings::SettingsInitError),
 }

@@ -5,10 +5,10 @@ use iced::{
     widget::{self, button, column, container, text},
 };
 
-use crate::{Message, font, state};
+use crate::{Message, Settings, font};
 
-pub(crate) fn view(state: &state::Init) -> Element<'_, Message> {
-    let libraries = &state.settings.libraries;
+pub(crate) fn view(settings: &Settings) -> Element<'_, Message> {
+    let libraries = &settings.libraries;
 
     let add_new_row = container(
         widget::row![

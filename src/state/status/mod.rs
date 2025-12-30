@@ -1,29 +1,20 @@
-use std::fmt;
-
-use crate::{Settings, Stream};
+use crate::Settings;
 pub(crate) use idle::Idle;
 pub(crate) use loading_library::LoadingLibrary;
+pub(crate) use should_load_library::ShouldLoadLibrary;
 
 mod idle;
 mod loading_library;
+mod should_load_library;
 
 #[derive(Debug)]
 pub(crate) enum Status {
+    Transistioning,
     UnrecoverableError(crate::Error),
-    Welcome(Init),
+    ShouldLoadLibrary(ShouldLoadLibrary),
+    Welcome(Settings),
+    #[expect(dead_code)]
     LoadingLibrary(LoadingLibrary),
+    #[expect(dead_code)]
     Idle(Idle),
-}
-
-pub(crate) struct Init {
-    pub(super) stream: Stream,
-    pub(crate) settings: Settings,
-}
-
-impl fmt::Debug for Init {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Opened")
-            .field("settings", &self.settings)
-            .finish()
-    }
 }

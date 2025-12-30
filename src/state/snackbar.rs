@@ -4,6 +4,7 @@ use iced::Element;
 
 pub(crate) struct Snackbar {
     ty: SnackbarType,
+    #[expect(dead_code)]
     message: Element<'static, crate::Message>,
 }
 
@@ -15,6 +16,7 @@ pub(crate) enum SnackbarType {
 }
 
 impl Snackbar {
+    #[expect(dead_code)]
     pub(crate) fn warning(message: impl Into<Element<'static, crate::Message>>) -> Self {
         Self {
             ty: SnackbarType::Warning,
@@ -22,6 +24,7 @@ impl Snackbar {
         }
     }
 
+    #[expect(dead_code)]
     pub(crate) fn info(message: impl Into<Element<'static, crate::Message>>) -> Self {
         Self {
             ty: SnackbarType::Info,
