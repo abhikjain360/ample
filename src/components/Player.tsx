@@ -1,5 +1,5 @@
 import { Play, Pause } from "lucide-react";
-import { usePlayer, usePlayerProgress } from "@/context/PlayerContext";
+import { usePlayer, usePlayerProgress } from "@/hooks/usePlayer";
 
 export function Player() {
     const { currentSong: song, isPlaying, togglePlay } = usePlayer();

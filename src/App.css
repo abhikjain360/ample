@@ -2,144 +2,144 @@
 @import "tw-animate-css";
 
 @font-face {
-  font-family: "Fira Code";
-  src: url("/ttf/FiraCode-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
+    font-family: "Fira Code";
+    src: url("/ttf/FiraCode-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
 }
 
 @font-face {
-  font-family: "Fira Code";
-  src: url("/ttf/FiraCode-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
+    font-family: "Fira Code";
+    src: url("/ttf/FiraCode-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
 }
 
 @font-face {
-  font-family: "Fira Code";
-  src: url("/ttf/FiraCode-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
+    font-family: "Fira Code";
+    src: url("/ttf/FiraCode-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
 }
 
 @font-face {
-  font-family: "Fira Code";
-  src: url("/ttf/FiraCode-Light.ttf") format("truetype");
-  font-weight: 300;
-  font-style: normal;
+    font-family: "Fira Code";
+    src: url("/ttf/FiraCode-Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
 }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
+    --radius-3xl: calc(var(--radius) + 12px);
+    --radius-4xl: calc(var(--radius) + 16px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Add Fira Code to the theme's font family */
-  --font-mono: "Fira Code", monospace;
-  --font-sans: "Fira Code", monospace;
+    /* Add Fira Code to the theme's font family */
+    --font-mono: "Fira Code", monospace;
+    --font-sans: "Fira Code", monospace;
 }
 
 :root {
-  --radius: 0.25rem;
+    --radius: 0.25rem;
 
-  /* Catppuccin Mocha Theme */
-  --background: #1e1e2e; /* Base */
-  --foreground: #cdd6f4; /* Text */
+    /* Catppuccin Mocha Theme */
+    --background: #1e1e2e; /* Base */
+    --foreground: #cdd6f4; /* Text */
 
-  --card: #1e1e2e; /* Base */
-  --card-foreground: #cdd6f4; /* Text */
+    --card: #1e1e2e; /* Base */
+    --card-foreground: #cdd6f4; /* Text */
 
-  --popover: #1e1e2e; /* Base */
-  --popover-foreground: #cdd6f4; /* Text */
+    --popover: #1e1e2e; /* Base */
+    --popover-foreground: #cdd6f4; /* Text */
 
-  --primary: #cba6f7; /* Mauve */
-  --primary-foreground: #11111b; /* Crust */
+    --primary: #cba6f7; /* Mauve */
+    --primary-foreground: #11111b; /* Crust */
 
-  --secondary: #313244; /* Surface0 */
-  --secondary-foreground: #cdd6f4; /* Text */
+    --secondary: #313244; /* Surface0 */
+    --secondary-foreground: #cdd6f4; /* Text */
 
-  --muted: #313244; /* Surface0 */
-  --muted-foreground: #a6adc8; /* Subtext0 */
+    --muted: #313244; /* Surface0 */
+    --muted-foreground: #a6adc8; /* Subtext0 */
 
-  --accent: #313244; /* Surface0 */
-  --accent-foreground: #cdd6f4; /* Text */
+    --accent: #313244; /* Surface0 */
+    --accent-foreground: #cdd6f4; /* Text */
 
-  --destructive: #f38ba8; /* Red */
-  --destructive-foreground: #11111b; /* Crust */
+    --destructive: #f38ba8; /* Red */
+    --destructive-foreground: #11111b; /* Crust */
 
-  --border: #45475a; /* Surface1 */
-  --input: #45475a; /* Surface1 */
-  --ring: #cba6f7; /* Mauve */
+    --border: #45475a; /* Surface1 */
+    --input: #45475a; /* Surface1 */
+    --ring: #cba6f7; /* Mauve */
 
-  --chart-1: #89b4fa; /* Blue */
-  --chart-2: #f38ba8; /* Red */
-  --chart-3: #f9e2af; /* Yellow */
-  --chart-4: #a6e3a1; /* Green */
-  --chart-5: #cba6f7; /* Mauve */
+    --chart-1: #89b4fa; /* Blue */
+    --chart-2: #f38ba8; /* Red */
+    --chart-3: #f9e2af; /* Yellow */
+    --chart-4: #a6e3a1; /* Green */
+    --chart-5: #cba6f7; /* Mauve */
 
-  --sidebar: #181825; /* Mantle */
-  --sidebar-foreground: #cdd6f4; /* Text */
-  --sidebar-primary: #cba6f7; /* Mauve */
-  --sidebar-primary-foreground: #11111b; /* Crust */
-  --sidebar-accent: #313244; /* Surface0 */
-  --sidebar-accent-foreground: #cdd6f4; /* Text */
-  --sidebar-border: #45475a; /* Surface1 */
-  --sidebar-ring: #cba6f7; /* Mauve */
+    --sidebar: #181825; /* Mantle */
+    --sidebar-foreground: #cdd6f4; /* Text */
+    --sidebar-primary: #cba6f7; /* Mauve */
+    --sidebar-primary-foreground: #11111b; /* Crust */
+    --sidebar-accent: #313244; /* Surface0 */
+    --sidebar-accent-foreground: #cdd6f4; /* Text */
+    --sidebar-border: #45475a; /* Surface1 */
+    --sidebar-ring: #cba6f7; /* Mauve */
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground font-mono;
-  }
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground font-mono;
+    }
 
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  ::-webkit-scrollbar {
-    display: none;
-  }
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    ::-webkit-scrollbar {
+        display: none;
+    }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
-  html {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    html {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
 }

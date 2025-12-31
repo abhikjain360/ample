@@ -2,7 +2,7 @@ import { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { Play, Clock, Music } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
-import { usePlayer } from "@/context/PlayerContext";
+import { usePlayer } from "@/hooks/usePlayer";
 
 export default function Queue() {
     const {
@@ -25,6 +25,7 @@ export default function Queue() {
         if (currentIndex !== -1) {
             setSelectedIndex(currentIndex);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatDuration = (duration: [number, number]) => {
@@ -242,10 +243,10 @@ export default function Queue() {
                             const isPlayingCurrent = index === currentIndex;
 
                             const textColorClass = isPlayingCurrent
-                                ? "text-green-500"
+                                ? "text-chart-4"
                                 : "text-foreground";
                             const mutedTextClass = isPlayingCurrent
-                                ? "text-green-500/70"
+                                ? "text-chart-4/70"
                                 : "text-muted-foreground";
 
                             return (
@@ -297,7 +298,7 @@ export default function Queue() {
                                     "group cursor-default select-none border-l-2 ";
 
                                 if (isPlayingCurrent) {
-                                    className += "border-l-green-500 ";
+                                    className += "border-l-chart-4 ";
                                 } else if (isFocused) {
                                     className += "border-l-primary ";
                                 } else {

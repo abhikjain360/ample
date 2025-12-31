@@ -7,8 +7,10 @@ import { invoke } from "@tauri-apps/api/core";
 import Welcome from "./pages/Welcome";
 import Home from "./pages/Home";
 import Queue from "./pages/Queue";
+import SearchPage from "./pages/SearchPage";
 import { Toaster } from "@/components/ui/sonner";
-import { PlayerProvider, usePlayer } from "@/context/PlayerContext";
+import { PlayerProvider } from "@/context/PlayerProvider";
+import { usePlayer } from "@/hooks/usePlayer";
 import { Player } from "@/components/Player";
 import { useVim } from "@/hooks/useVim";
 
@@ -51,6 +53,11 @@ function AppContent() {
                 action: () => clearQueue(),
                 noRepeat: true,
             },
+            {
+                keys: "/",
+                action: () => setLocation("/search"),
+                noRepeat: true,
+            },
         ],
         [location, setLocation, playNext, playPrev, clearQueue],
     );
@@ -64,6 +71,7 @@ function AppContent() {
                     <Route path="/" component={Welcome} />
                     <Route path="/home" component={Home} />
                     <Route path="/queue" component={Queue} />
+                    <Route path="/search" component={SearchPage} />
                     <Route>404: Page Not Found</Route>
                 </Switch>
             </div>

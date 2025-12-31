@@ -22,7 +22,9 @@ export function useVim(config: VimConfig) {
     const processingRef = useRef(false);
 
     // Update bindings ref when config changes
-    bindingsRef.current = config.bindings;
+    useEffect(() => {
+        bindingsRef.current = config.bindings;
+    }, [config.bindings]);
 
     const resetSequence = useCallback(() => {
         sequenceRef.current = "";
@@ -233,7 +235,9 @@ export function useVimNavigation<T>(
 ) {
     const indexRef = useRef(0);
     const itemsRef = useRef(items);
-    itemsRef.current = items;
+    useEffect(() => {
+        itemsRef.current = items;
+    }, [items]);
 
     const getIndex = useCallback(() => indexRef.current, []);
 

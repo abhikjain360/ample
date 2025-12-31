@@ -1,20 +1,19 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Play, Clock, Music } from "lucide-react";
+import { Music } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
+import { VirtuosoHandle } from "react-virtuoso";
 import Loading from "@/components/Loading";
-import Search from "@/components/Search";
+import SongList from "@/components/SongList";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
 import { SongData } from "@/types";
-import { usePlayer } from "@/context/PlayerContext";
+import { usePlayer } from "@/hooks/usePlayer";
 
 export default function Home() {
     const [songs, setSongs] = useState<SongData[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay } =
         usePlayer();
@@ -22,21 +21,7 @@ export default function Home() {
     const [, setLocation] = useLocation();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-    useEffect(() => {
-        fetchSongs();
-    }, []);
-
-    useEffect(() => {
-        if (currentSong && virtuosoRef.current) {
-            // We don't necessarily want to scroll to current song on Home page if user is browsing elsewhere.
-            // The original code did this, but now with queue, the playing song might not even be on this list (if we navigated away and back?).
-            // But if it IS in the list, maybe we only scroll if we just started playing it?
-            // Let's disable auto-scroll to playing song on Home for now, as it might disrupt browsing.
-            // User can press 'Space' or navigation keys to move.
-        }
-    }, [currentSong]);
-
-    const fetchSongs = async () => {
+    const fetchSongs = useCallback(async () => {
         try {
             const songList = await invoke<SongData[]>("library_list_songs");
             setSongs(songList);
@@ -49,12 +34,11 @@ export default function Home() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [setLocation]);
 
-    const formatDuration = (duration: [number, number]) => {
-        const [minutes, seconds] = duration;
-        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    };
+    useEffect(() => {
+        fetchSongs();
+    }, [fetchSongs]);
 
     const nav = useVimNavigation(songs ?? [], {
         onSelect: () => {
@@ -65,6 +49,7 @@ export default function Home() {
     const updateSelection = useCallback(
         (newIndex: number, direction: "up" | "down" | "auto" = "auto") => {
             setSelectedIndex(newIndex);
+            nav.setIndex(newIndex); // Ensure vim nav state is updated if set externally (mouse)
 
             if (direction === "auto") {
                 virtuosoRef.current?.scrollIntoView({
@@ -90,7 +75,7 @@ export default function Home() {
                 align: direction === "down" ? "end" : "start",
             });
         },
-        [],
+        [nav],
     );
 
     const handleAddSelectionToQueue = useCallback(() => {
@@ -98,7 +83,6 @@ export default function Home() {
         const song = songs[selectedIndex];
         if (song) {
             addToQueue([song]);
-            toast.success(`Added "${song.title}" to queue`);
         }
     }, [songs, selectedIndex, addToQueue]);
 
@@ -123,7 +107,7 @@ export default function Home() {
                     const idx = nav.next();
                     updateSelection(idx, "down");
                 },
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
             },
             {
                 keys: "k",
@@ -131,7 +115,7 @@ export default function Home() {
                     const idx = nav.prev();
                     updateSelection(idx, "up");
                 },
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
             },
             {
                 keys: "gg",
@@ -139,7 +123,7 @@ export default function Home() {
                     const idx = nav.first();
                     updateSelection(idx, "auto");
                 },
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
             },
             {
                 keys: "G",
@@ -147,18 +131,18 @@ export default function Home() {
                     const idx = nav.last();
                     updateSelection(idx, "auto");
                 },
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
             },
             {
                 keys: "Enter",
                 action: handlePlay,
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
                 noRepeat: true,
             },
             {
                 keys: "a",
                 action: handleAddSelectionToQueue,
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
                 noRepeat: true,
             },
             {
@@ -167,25 +151,17 @@ export default function Home() {
                     if (currentSong) togglePlay();
                     else handlePlay();
                 },
-                when: () => !isSearchOpen,
                 noRepeat: true,
             },
             {
                 keys: "S",
                 action: handleShuffleAndPlay,
-                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
+                when: () => (songs?.length ?? 0) > 0,
                 noRepeat: true,
             },
             {
                 keys: "ZZ",
                 action: () => setLocation("/"),
-                when: () => !isSearchOpen,
-                noRepeat: true,
-            },
-            {
-                keys: "/",
-                action: () => setIsSearchOpen(true),
-                when: () => !isSearchOpen,
                 noRepeat: true,
             },
         ],
@@ -198,7 +174,7 @@ export default function Home() {
             handleAddSelectionToQueue,
             handleShuffleAndPlay,
             currentSong,
-            isSearchOpen,
+            setLocation,
         ],
     );
 
@@ -216,9 +192,6 @@ export default function Home() {
 
     return (
         <div className="h-full w-full bg-background text-foreground flex flex-col">
-            {isSearchOpen && songs && (
-                <Search songs={songs} onClose={() => setIsSearchOpen(false)} />
-            )}
             <div className="flex-1 relative overflow-hidden">
                 {songs.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
@@ -226,116 +199,14 @@ export default function Home() {
                         <p>No songs found in this library.</p>
                     </div>
                 ) : (
-                    <TableVirtuoso
-                        ref={virtuosoRef}
-                        data={songs}
+                    <SongList
+                        songs={songs}
+                        currentSong={currentSong}
+                        selectedIndex={selectedIndex}
+                        onSelect={(index) => updateSelection(index, "auto")}
+                        onPlay={(song) => play(song, songs)}
+                        virtuosoRef={virtuosoRef}
                         overscan={200}
-                        className="h-full w-full scroll-pt-11"
-                        fixedHeaderContent={() => (
-                            <tr className="bg-muted/70 backdrop-blur-md border-b-2 border-border text-xs text-muted-foreground uppercase">
-                                <th className="px-4 py-3 font-medium w-12 text-center bg-muted/70 backdrop-blur-md">
-                                    #
-                                </th>
-                                <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
-                                    Title
-                                </th>
-                                <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
-                                    Artist
-                                </th>
-                                <th className="px-4 py-3 font-medium text-right w-24 bg-muted/70 backdrop-blur-md">
-                                    <Clock className="h-3 w-3 inline-block" />
-                                </th>
-                            </tr>
-                        )}
-                        itemContent={(index, song) => {
-                            const isPlayingCurrent =
-                                currentSong?.id === song.id;
-
-                            // Text color logic
-                            const textColorClass = isPlayingCurrent
-                                ? "text-green-500"
-                                : "text-foreground";
-                            const mutedTextClass = isPlayingCurrent
-                                ? "text-green-500/70"
-                                : "text-muted-foreground";
-
-                            return (
-                                <>
-                                    <td
-                                        className={`px-4 py-3 text-center font-mono text-xs w-12 ${textColorClass}`}
-                                    >
-                                        {isPlayingCurrent ? (
-                                            <Play className="h-3 w-3 mx-auto fill-current" />
-                                        ) : (
-                                            <span className="opacity-50">
-                                                {index + 1}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td
-                                        className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}
-                                    >
-                                        {song.title}
-                                    </td>
-                                    <td
-                                        className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}
-                                    >
-                                        {song.artist || "Unknown Artist"}
-                                    </td>
-                                    <td
-                                        className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}
-                                    >
-                                        {formatDuration(song.duration)}
-                                    </td>
-                                </>
-                            );
-                        }}
-                        components={{
-                            Table: (props) => (
-                                <table
-                                    {...props}
-                                    className="w-full table-fixed border-collapse"
-                                />
-                            ),
-                            TableRow: (props) => {
-                                const index = props["data-index"];
-                                const isFocused = selectedIndex === index;
-                                const isPlayingCurrent =
-                                    currentSong?.id === songs[index].id;
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                const { item: _item, ...rest } = props;
-
-                                let className =
-                                    "group cursor-default select-none border-l-2 ";
-
-                                // Border logic
-                                if (isPlayingCurrent) {
-                                    className += "border-l-green-500 ";
-                                } else if (isFocused) {
-                                    className += "border-l-primary ";
-                                } else {
-                                    className += "border-l-transparent ";
-                                }
-
-                                // Background logic
-                                if (isFocused) {
-                                    className += "bg-accent ";
-                                } else {
-                                    className += "hover:bg-accent/30 ";
-                                }
-
-                                return (
-                                    <tr
-                                        {...rest}
-                                        className={className}
-                                        onClick={() => updateSelection(index)}
-                                        onDoubleClick={() =>
-                                            play(songs[index], songs)
-                                        }
-                                    />
-                                );
-                            },
-                        }}
                     />
                 )}
             </div>
