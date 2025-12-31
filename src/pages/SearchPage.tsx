@@ -44,13 +44,8 @@ export default function SearchPage() {
     const fuse = useMemo(() => {
         if (!songs) return null;
 
-        const enhancedSongs = songs.map((song) => ({
-            ...song,
-            formatted: `${song.title} ${song.artist || ""}`,
-        }));
-
-        return new Fuse(enhancedSongs, {
-            keys: ["formatted", "title", "artist"],
+        return new Fuse(songs, {
+            keys: ["title", "artist"],
             threshold: 0.3,
             ignoreLocation: true,
         });
@@ -60,11 +55,7 @@ export default function SearchPage() {
     const results = useMemo(() => {
         if (!songs) return [];
         if (!query || !fuse) return songs;
-        return fuse.search(query).map((result) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { formatted, ...song } = result.item;
-            return song as SongData;
-        });
+        return fuse.search(query).map((result) => result.item);
     }, [songs, query, fuse]);
 
     const nav = useVimNavigation(results);

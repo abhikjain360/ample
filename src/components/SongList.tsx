@@ -1,6 +1,8 @@
 import { Play, Clock } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { SongData } from "@/types";
+import { formatDuration } from "@/lib/utils";
+import { memo } from "react";
 
 interface SongListProps {
     songs: SongData[];
@@ -12,7 +14,7 @@ interface SongListProps {
     overscan?: number;
 }
 
-export default function SongList({
+function SongList({
     songs,
     currentSong,
     selectedIndex,
@@ -21,11 +23,6 @@ export default function SongList({
     virtuosoRef,
     overscan = 200,
 }: SongListProps) {
-    const formatDuration = (duration: [number, number]) => {
-        const [minutes, seconds] = duration;
-        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    };
-
     return (
         <TableVirtuoso
             ref={virtuosoRef}
@@ -136,3 +133,5 @@ export default function SongList({
         />
     );
 }
+
+export default memo(SongList);

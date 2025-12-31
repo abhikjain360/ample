@@ -13,3 +13,8 @@ export function shuffle<T>(array: T[]): T[] {
     }
     return newArray;
 }
+
+export function formatDuration(duration: [number, number]) {
+    const [minutes, seconds] = duration;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
