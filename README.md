@@ -1,7 +1,12 @@
-# Tauri + React + Typescript
+# Ample
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A keyboard-centric music player. It is **A**bhik's **M**usic **Pl**ay**E**r.
 
-## Recommended IDE Setup
+## Why?
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+I couldn't find a music player for local files that I liked. This one lacks a lot (most? all?) of features, but it is everything I need. PRs welcome as long as the features I need are still working, and I'll not maintain the features I don't want so you or someone else needs to be responsible for those.
+
+## Acknowledgement
+
+- [miniaudio](https://miniaud.io/)
+- [tauri](https://tauri.app/)
