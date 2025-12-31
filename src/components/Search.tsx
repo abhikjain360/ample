@@ -34,11 +34,14 @@ export default function Search({ songs, onClose }: SearchProps) {
         return fuse.search(query).map((result) => result.item);
     }, [songs, query, fuse]);
 
+    const nav = useVimNavigation(results);
+
     // Reset selection when results change
     useEffect(() => {
         setSelectedIndex(0);
+        nav.setIndex(0);
         virtuosoRef.current?.scrollToIndex(0);
-    }, [results]);
+    }, [results, nav]);
 
     // Auto-focus input
     useEffect(() => {
@@ -49,12 +52,6 @@ export default function Search({ songs, onClose }: SearchProps) {
         const [minutes, seconds] = duration;
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     };
-
-    const nav = useVimNavigation(results, {
-        onSelect: () => {
-            // handled by bindings
-        },
-    });
 
     const updateSelection = useCallback(
         (newIndex: number, direction: "up" | "down" | "auto" = "auto") => {
@@ -91,7 +88,7 @@ export default function Search({ songs, onClose }: SearchProps) {
         if (results.length === 0) return;
         const song = results[selectedIndex];
         if (!song) return;
-        await play(song, results);
+        await play(song, [song]);
         onClose();
     }, [results, selectedIndex, play, onClose]);
 
@@ -341,12 +338,15 @@ export default function Search({ songs, onClose }: SearchProps) {
                                         className={className}
                                         onClick={() => {
                                             setSelectedIndex(index);
-                                            play(results[index], results);
+                                            play(results[index], [
+                                                results[index],
+                                            ]);
                                             onClose();
                                         }}
-                                        onMouseEnter={() =>
-                                            setSelectedIndex(index)
-                                        }
+                                        onMouseEnter={() => {
+                                            setSelectedIndex(index);
+                                            nav.setIndex(index);
+                                        }}
                                     />
                                 );
                             },
