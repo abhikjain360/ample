@@ -14,18 +14,18 @@ export function Player() {
     const currentMinutes = Math.floor(currentDurationInSeconds / 60);
     const currentSeconds = Math.floor(currentDurationInSeconds % 60);
 
-    const formatTime = (min: number, sec: number) => 
+    const formatTime = (min: number, sec: number) =>
         `${min}:${sec.toString().padStart(2, "0")}`;
 
     return (
         <div className="bg-background/80 backdrop-blur-lg border-t border-border p-4 flex items-center justify-between gap-4 transition-all duration-300 ease-in-out animate-in slide-in-from-bottom-10 relative">
             <div className="absolute top-0 left-0 right-0 h-1 bg-secondary">
-                 <div 
+                <div
                     className="h-full bg-primary transition-all duration-300 ease-linear"
                     style={{ width: `${progress * 100}%` }}
                 />
             </div>
-            
+
             <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{song.title}</h3>
                 <p className="text-xs text-muted-foreground truncate">

@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { Play, Clock, Music, Trash2 } from "lucide-react";
+import { Play, Clock, Music } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
 import { usePlayer } from "@/context/PlayerContext";
-import { SongData } from "@/types";
 
 export default function Queue() {
-    const { 
-        queue, 
-        currentSong, 
-        currentIndex, 
+    const {
+        queue,
+        currentIndex,
+        setCurrentIndex,
         play,
         togglePlay,
-        removeFromQueue, 
+        removeFromQueue,
         shuffleQueue,
-        moveInQueue
+        moveInQueue,
     } = usePlayer();
 
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -74,7 +73,7 @@ export default function Queue() {
         // Play the selected song from the queue
         const song = queue[selectedIndex];
         if (song) {
-             play(song);
+            play(song);
         }
     }, [queue, selectedIndex, play]);
 
@@ -83,7 +82,7 @@ export default function Queue() {
         removeFromQueue(selectedIndex);
         // If we remove the last item, select the new last item
         if (selectedIndex >= queue.length - 1) {
-             setSelectedIndex(Math.max(0, queue.length - 2));
+            setSelectedIndex(Math.max(0, queue.length - 2));
         }
     }, [queue, selectedIndex, removeFromQueue]);
 
@@ -91,7 +90,7 @@ export default function Queue() {
         if (queue.length <= 1) return;
         // Don't move if it's already at the bottom
         if (selectedIndex >= queue.length - 1) return;
-        
+
         moveInQueue(selectedIndex, selectedIndex + 1);
         // Select the moved item in its new position
         updateSelection(selectedIndex + 1, "down");
@@ -101,7 +100,7 @@ export default function Queue() {
         if (queue.length <= 1) return;
         // Don't move if it's already at the top
         if (selectedIndex <= 0) return;
-        
+
         moveInQueue(selectedIndex, selectedIndex - 1);
         // Select the moved item in its new position
         updateSelection(selectedIndex - 1, "up");
@@ -168,7 +167,6 @@ export default function Queue() {
             {
                 keys: "s",
                 action: togglePlay,
-                when: () => currentSong !== null,
                 noRepeat: true,
             },
             {
@@ -179,16 +177,15 @@ export default function Queue() {
             },
         ],
         [
-            nav, 
-            queue.length, 
-            updateSelection, 
-            handlePlay, 
-            handleRemove, 
-            shuffleQueue, 
-            togglePlay, 
-            currentSong, 
-            handleMoveDown, 
-            handleMoveUp
+            nav,
+            queue.length,
+            updateSelection,
+            handlePlay,
+            handleRemove,
+            shuffleQueue,
+            togglePlay,
+            handleMoveDown,
+            handleMoveUp,
         ],
     );
 
@@ -202,12 +199,14 @@ export default function Queue() {
                     Queue ({queue.length})
                 </h1>
             </div>
-            
+
             <div className="flex-1 relative overflow-hidden">
                 {queue.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
                         <p>Queue is empty.</p>
-                        <p className="text-sm">Press 'q' to go home and add songs.</p>
+                        <p className="text-sm">
+                            Press 'q' to go home and add songs.
+                        </p>
                     </div>
                 ) : (
                     <TableVirtuoso
@@ -233,29 +232,43 @@ export default function Queue() {
                         )}
                         itemContent={(index, song) => {
                             // Check if this specific instance in queue is playing.
-                            // Since queue can have duplicates? 
+                            // Since queue can have duplicates?
                             // Our logic relies on currentIndex.
                             const isPlayingCurrent = index === currentIndex;
-                            
-                            const textColorClass = isPlayingCurrent ? 'text-green-500' : 'text-foreground';
-                            const mutedTextClass = isPlayingCurrent ? 'text-green-500/70' : 'text-muted-foreground';
+
+                            const textColorClass = isPlayingCurrent
+                                ? "text-green-500"
+                                : "text-foreground";
+                            const mutedTextClass = isPlayingCurrent
+                                ? "text-green-500/70"
+                                : "text-muted-foreground";
 
                             return (
                                 <>
-                                    <td className={`px-4 py-3 text-center font-mono text-xs w-12 ${textColorClass}`}>
+                                    <td
+                                        className={`px-4 py-3 text-center font-mono text-xs w-12 ${textColorClass}`}
+                                    >
                                         {isPlayingCurrent ? (
                                             <Play className="h-3 w-3 mx-auto fill-current" />
                                         ) : (
-                                            <span className="opacity-50">{index + 1}</span>
+                                            <span className="opacity-50">
+                                                {index + 1}
+                                            </span>
                                         )}
                                     </td>
-                                    <td className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}>
+                                    <td
+                                        className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}
+                                    >
                                         {song.title}
                                     </td>
-                                    <td className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}>
+                                    <td
+                                        className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}
+                                    >
                                         {song.artist || "Unknown Artist"}
                                     </td>
-                                    <td className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}>
+                                    <td
+                                        className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}
+                                    >
                                         {formatDuration(song.duration)}
                                     </td>
                                 </>
@@ -275,8 +288,9 @@ export default function Queue() {
                                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 const { item: _item, ...rest } = props;
 
-                                let className = "group cursor-default select-none border-l-2 ";
-                                
+                                let className =
+                                    "group cursor-default select-none border-l-2 ";
+
                                 if (isPlayingCurrent) {
                                     className += "border-l-green-500 ";
                                 } else if (isFocused) {
@@ -296,7 +310,9 @@ export default function Queue() {
                                         {...rest}
                                         className={className}
                                         onClick={() => updateSelection(index)}
-                                        onDoubleClick={() => setCurrentIndex(index)}
+                                        onDoubleClick={() =>
+                                            setCurrentIndex(index)
+                                        }
                                     />
                                 );
                             },

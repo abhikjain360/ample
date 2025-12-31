@@ -14,13 +14,8 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const { 
-        currentSong, 
-        togglePlay, 
-        play, 
-        addToQueue, 
-        shuffleAndPlay 
-    } = usePlayer();
+    const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay } =
+        usePlayer();
 
     const [, setLocation] = useLocation();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -31,11 +26,11 @@ export default function Home() {
 
     useEffect(() => {
         if (currentSong && virtuosoRef.current) {
-             // We don't necessarily want to scroll to current song on Home page if user is browsing elsewhere.
-             // The original code did this, but now with queue, the playing song might not even be on this list (if we navigated away and back?).
-             // But if it IS in the list, maybe we only scroll if we just started playing it?
-             // Let's disable auto-scroll to playing song on Home for now, as it might disrupt browsing.
-             // User can press 'Space' or navigation keys to move.
+            // We don't necessarily want to scroll to current song on Home page if user is browsing elsewhere.
+            // The original code did this, but now with queue, the playing song might not even be on this list (if we navigated away and back?).
+            // But if it IS in the list, maybe we only scroll if we just started playing it?
+            // Let's disable auto-scroll to playing song on Home for now, as it might disrupt browsing.
+            // User can press 'Space' or navigation keys to move.
         }
     }, [currentSong]);
 
@@ -61,7 +56,7 @@ export default function Home() {
 
     const nav = useVimNavigation(songs ?? [], {
         onSelect: () => {
-           // handled by bindings
+            // handled by bindings
         },
     });
 
@@ -167,7 +162,6 @@ export default function Home() {
             {
                 keys: "s",
                 action: togglePlay,
-                when: () => currentSong !== null,
                 noRepeat: true,
             },
             {
@@ -183,14 +177,13 @@ export default function Home() {
             },
         ],
         [
-            nav, 
-            songs?.length, 
-            updateSelection, 
-            currentSong, 
-            togglePlay, 
-            handlePlay, 
-            handleAddSelectionToQueue, 
-            handleShuffleAndPlay
+            nav,
+            songs?.length,
+            updateSelection,
+            togglePlay,
+            handlePlay,
+            handleAddSelectionToQueue,
+            handleShuffleAndPlay,
         ],
     );
 
@@ -237,28 +230,43 @@ export default function Home() {
                             </tr>
                         )}
                         itemContent={(index, song) => {
-                            const isPlayingCurrent = currentSong?.id === song.id;
-                            
+                            const isPlayingCurrent =
+                                currentSong?.id === song.id;
+
                             // Text color logic
-                            const textColorClass = isPlayingCurrent ? 'text-green-500' : 'text-foreground';
-                            const mutedTextClass = isPlayingCurrent ? 'text-green-500/70' : 'text-muted-foreground';
+                            const textColorClass = isPlayingCurrent
+                                ? "text-green-500"
+                                : "text-foreground";
+                            const mutedTextClass = isPlayingCurrent
+                                ? "text-green-500/70"
+                                : "text-muted-foreground";
 
                             return (
                                 <>
-                                    <td className={`px-4 py-3 text-center font-mono text-xs w-12 ${textColorClass}`}>
+                                    <td
+                                        className={`px-4 py-3 text-center font-mono text-xs w-12 ${textColorClass}`}
+                                    >
                                         {isPlayingCurrent ? (
                                             <Play className="h-3 w-3 mx-auto fill-current" />
                                         ) : (
-                                            <span className="opacity-50">{index + 1}</span>
+                                            <span className="opacity-50">
+                                                {index + 1}
+                                            </span>
                                         )}
                                     </td>
-                                    <td className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}>
+                                    <td
+                                        className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}
+                                    >
                                         {song.title}
                                     </td>
-                                    <td className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}>
+                                    <td
+                                        className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}
+                                    >
                                         {song.artist || "Unknown Artist"}
                                     </td>
-                                    <td className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}>
+                                    <td
+                                        className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}
+                                    >
                                         {formatDuration(song.duration)}
                                     </td>
                                 </>
@@ -274,12 +282,14 @@ export default function Home() {
                             TableRow: (props) => {
                                 const index = props["data-index"];
                                 const isFocused = selectedIndex === index;
-                                const isPlayingCurrent = currentSong?.id === songs[index].id;
+                                const isPlayingCurrent =
+                                    currentSong?.id === songs[index].id;
                                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 const { item: _item, ...rest } = props;
 
-                                let className = "group cursor-default select-none border-l-2 ";
-                                
+                                let className =
+                                    "group cursor-default select-none border-l-2 ";
+
                                 // Border logic
                                 if (isPlayingCurrent) {
                                     className += "border-l-green-500 ";
@@ -301,7 +311,9 @@ export default function Home() {
                                         {...rest}
                                         className={className}
                                         onClick={() => updateSelection(index)}
-                                        onDoubleClick={() => play(songs[index], songs)}
+                                        onDoubleClick={() =>
+                                            play(songs[index], songs)
+                                        }
                                     />
                                 );
                             },

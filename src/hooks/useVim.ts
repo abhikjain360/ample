@@ -75,55 +75,85 @@ export function useVim(config: VimConfig) {
             // Add to sequence
             sequenceRef.current += key;
             const currentSequence = sequenceRef.current;
-
-            // Check for exact matches
             const bindings = bindingsRef.current;
+
+            // Helper to execute binding
+            const executeBinding = (binding: KeyBinding, count: number = 1) => {
+                // Check condition if exists
+                if (binding.when && !binding.when()) {
+                    return false;
+                }
+
+                // Handle noRepeat bindings
+                if (binding.noRepeat && e.repeat) {
+                    e.preventDefault();
+                    resetSequence();
+                    return true;
+                }
+
+                e.preventDefault();
+
+                // Use requestAnimationFrame to batch with next paint
+                processingRef.current = true;
+
+                requestAnimationFrame(() => {
+                    // Execute action 'count' times
+                    for (let i = 0; i < count; i++) {
+                        binding.action({ repeat: e.repeat });
+                    }
+                    processingRef.current = false;
+                });
+
+                resetSequence();
+                return true;
+            };
+
+            // 1. Check for exact full match
             for (const binding of bindings) {
                 const keys = Array.isArray(binding.keys)
                     ? binding.keys
                     : [binding.keys];
-
                 for (const bindingKey of keys) {
                     if (bindingKey === currentSequence) {
-                        // Check condition if exists
-                        if (binding.when && !binding.when()) {
-                            continue;
-                        }
-
-                        // Handle noRepeat bindings
-                        if (binding.noRepeat && e.repeat) {
-                            e.preventDefault();
-                            resetSequence();
-                            return;
-                        }
-
-                        e.preventDefault();
-
-                        // Use requestAnimationFrame to batch with next paint
-                        processingRef.current = true;
-                        
-                        // If it's a repeat event, ensure we are not already processing one
-                        // This might be redundant with the check at the top, but safe.
-                        
-                        requestAnimationFrame(() => {
-                             // Pass the raw event repeat flag
-                            binding.action({ repeat: e.repeat });
-                            processingRef.current = false;
-                        });
-
-                        resetSequence();
-                        return;
+                        if (executeBinding(binding)) return;
+                        // If condition failed, continue searching
                     }
                 }
             }
 
-            // Check if current sequence is a prefix of any binding
+            // 2. Check for numeric prefix match
+            // Pattern: [count][command]
+            // Only look for count if the full sequence wasn't an exact match (or condition failed)
+            const countMatch = currentSequence.match(/^(\d+)(.+)$/);
+            if (countMatch) {
+                const count = parseInt(countMatch[1], 10);
+                const commandPart = countMatch[2];
+
+                // If sequence starts with 0, and 0 is not a valid count (it's a movement),
+                // we should have caught it in exact match if "0" was bound.
+                // But standard Vim: 0 is start of line, 1-9 starts count.
+                // Here we just parse any number.
+
+                for (const binding of bindings) {
+                    const keys = Array.isArray(binding.keys)
+                        ? binding.keys
+                        : [binding.keys];
+                    for (const bindingKey of keys) {
+                        if (bindingKey === commandPart) {
+                            if (executeBinding(binding, count)) return;
+                        }
+                    }
+                }
+            }
+
+            // 3. Check if current sequence is a prefix of any binding (or [count]prefix)
             let isPrefix = false;
+
+            // Check if full sequence is prefix of any binding
             for (const binding of bindings) {
                 const keys = Array.isArray(binding.keys)
                     ? binding.keys
                     : [binding.keys];
-
                 for (const bindingKey of keys) {
                     if (
                         bindingKey.startsWith(currentSequence) &&
@@ -134,6 +164,37 @@ export function useVim(config: VimConfig) {
                     }
                 }
                 if (isPrefix) break;
+            }
+
+            // If not a direct prefix, check if it's a number followed by a prefix
+            if (!isPrefix) {
+                // If sequence is just digits, it's a prefix for any binding (potentially)
+                if (/^\d+$/.test(currentSequence)) {
+                    // Wait, if it's just "s", /^\d+$/ is false.
+                    // But if sequence is "1", it is true.
+                    isPrefix = true;
+                } else {
+                    // Check if it's [count][partial_command]
+                    const prefixMatch = currentSequence.match(/^(\d+)(.+)$/);
+                    if (prefixMatch) {
+                        const commandPart = prefixMatch[2];
+                        for (const binding of bindings) {
+                            const keys = Array.isArray(binding.keys)
+                                ? binding.keys
+                                : [binding.keys];
+                            for (const bindingKey of keys) {
+                                if (
+                                    bindingKey.startsWith(commandPart) &&
+                                    bindingKey !== commandPart
+                                ) {
+                                    isPrefix = true;
+                                    break;
+                                }
+                            }
+                            if (isPrefix) break;
+                        }
+                    }
+                }
             }
 
             if (isPrefix) {
@@ -218,13 +279,16 @@ export function useVimNavigation<T>(
         }
     }, [options]);
 
-    return useMemo(() => ({
-        getIndex,
-        setIndex,
-        next,
-        prev,
-        first,
-        last,
-        select,
-    }), [getIndex, setIndex, next, prev, first, last, select]);
+    return useMemo(
+        () => ({
+            getIndex,
+            setIndex,
+            next,
+            prev,
+            first,
+            last,
+            select,
+        }),
+        [getIndex, setIndex, next, prev, first, last, select],
+    );
 }
