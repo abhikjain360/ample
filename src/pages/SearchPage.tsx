@@ -111,12 +111,16 @@ export default function SearchPage() {
         [nav],
     );
 
-    const handlePlay = useCallback(async () => {
-        if (results.length === 0) return;
-        const song = results[selectedIndex];
-        if (!song) return;
-        await play(song, results);
-    }, [results, selectedIndex, play]);
+    const handlePlay = useCallback(
+        async (all: boolean = false) => {
+            if (results.length === 0) return;
+            const song = results[selectedIndex];
+            if (!song) return;
+            const songs = all ? results : [song];
+            await play(song, songs);
+        },
+        [results, selectedIndex, play],
+    );
 
     const handleAddSelectionToQueue = useCallback(() => {
         if (results.length === 0) return;
@@ -171,7 +175,7 @@ export default function SearchPage() {
             },
             {
                 keys: "Enter",
-                action: handlePlay,
+                action: () => handlePlay(true),
                 when: () => results.length > 0,
                 noRepeat: true,
             },
@@ -185,7 +189,7 @@ export default function SearchPage() {
                 keys: " ",
                 action: () => {
                     if (currentSong) togglePlay();
-                    else handlePlay();
+                    else handlePlay(false);
                 },
                 noRepeat: true,
             },

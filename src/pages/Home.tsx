@@ -86,13 +86,17 @@ export default function Home() {
         }
     }, [songs, selectedIndex, addToQueue]);
 
-    const handlePlay = useCallback(async () => {
-        if (!songs) return;
-        const song = songs[selectedIndex];
-        if (!song) return;
+    const handlePlay = useCallback(
+        async (all: boolean = false) => {
+            if (!songs) return;
+            const song = songs[selectedIndex];
+            if (!song) return;
 
-        await play(song, songs);
-    }, [songs, selectedIndex, play]);
+            const toPlaySongs = all ? songs : [song];
+            await play(song, toPlaySongs);
+        },
+        [songs, selectedIndex, play],
+    );
 
     const handleShuffleAndPlay = useCallback(async () => {
         if (!songs || songs.length === 0) return;
@@ -135,7 +139,7 @@ export default function Home() {
             },
             {
                 keys: "Enter",
-                action: handlePlay,
+                action: () => handlePlay(true),
                 when: () => (songs?.length ?? 0) > 0,
                 noRepeat: true,
             },
@@ -149,7 +153,7 @@ export default function Home() {
                 keys: " ",
                 action: () => {
                     if (currentSong) togglePlay();
-                    else handlePlay();
+                    else handlePlay(false);
                 },
                 noRepeat: true,
             },
