@@ -1,30 +1,48 @@
-import { useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { Play, Clock, Music } from "lucide-react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import Fuse from "fuse.js";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
-import { useVim, useVimNavigation } from "@/hooks/useVim";
+import { Clock, Play, Music } from "lucide-react";
+import { SongData } from "@/types";
 import { usePlayer } from "@/context/PlayerContext";
+import { useVim, useVimNavigation } from "@/hooks/useVim";
 
-export default function Queue() {
-    const {
-        queue,
-        currentIndex,
-        currentSong,
-        setCurrentIndex,
-        play,
-        togglePlay,
-        removeFromQueue,
-        shuffleQueue,
-        moveInQueue,
-    } = usePlayer();
+interface SearchProps {
+    songs: SongData[];
+    onClose: () => void;
+}
 
+export default function Search({ songs, onClose }: SearchProps) {
+    const [query, setQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const inputRef = useRef<HTMLInputElement>(null);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
+    const { play, togglePlay, currentSong, addToQueue, shuffleAndPlay } =
+        usePlayer();
 
-    // Sync selected index with current playing song initially if possible
+    // Initialize Fuse
+    const fuse = useMemo(() => {
+        return new Fuse(songs, {
+            keys: ["title", "artist"],
+            threshold: 0.4, // Adjust for fuzziness
+            ignoreLocation: true, // Search anywhere in the string
+        });
+    }, [songs]);
+
+    // Derived filtered songs
+    const results = useMemo(() => {
+        if (!query) return songs;
+        return fuse.search(query).map((result) => result.item);
+    }, [songs, query, fuse]);
+
+    // Reset selection when results change
     useEffect(() => {
-        if (currentIndex !== -1) {
-            setSelectedIndex(currentIndex);
-        }
+        setSelectedIndex(0);
+        virtuosoRef.current?.scrollToIndex(0);
+    }, [results]);
+
+    // Auto-focus input
+    useEffect(() => {
+        inputRef.current?.focus();
     }, []);
 
     const formatDuration = (duration: [number, number]) => {
@@ -32,9 +50,9 @@ export default function Queue() {
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     };
 
-    const nav = useVimNavigation(queue, {
+    const nav = useVimNavigation(results, {
         onSelect: () => {
-            // Handled by Enter binding
+            // handled by bindings
         },
     });
 
@@ -69,43 +87,27 @@ export default function Queue() {
         [],
     );
 
-    const handlePlay = useCallback(() => {
-        if (queue.length === 0) return;
-        // Play the selected song from the queue
-        const song = queue[selectedIndex];
+    const handlePlay = useCallback(async () => {
+        if (results.length === 0) return;
+        const song = results[selectedIndex];
+        if (!song) return;
+        await play(song, results);
+        onClose();
+    }, [results, selectedIndex, play, onClose]);
+
+    const handleAddSelectionToQueue = useCallback(() => {
+        if (results.length === 0) return;
+        const song = results[selectedIndex];
         if (song) {
-            play(song);
+            addToQueue([song]);
         }
-    }, [queue, selectedIndex, play]);
+    }, [results, selectedIndex, addToQueue]);
 
-    const handleRemove = useCallback(() => {
-        if (queue.length === 0) return;
-        removeFromQueue(selectedIndex);
-        // If we remove the last item, select the new last item
-        if (selectedIndex >= queue.length - 1) {
-            setSelectedIndex(Math.max(0, queue.length - 2));
-        }
-    }, [queue, selectedIndex, removeFromQueue]);
-
-    const handleMoveDown = useCallback(() => {
-        if (queue.length <= 1) return;
-        // Don't move if it's already at the bottom
-        if (selectedIndex >= queue.length - 1) return;
-
-        moveInQueue(selectedIndex, selectedIndex + 1);
-        // Select the moved item in its new position
-        updateSelection(selectedIndex + 1, "down");
-    }, [queue, selectedIndex, moveInQueue, updateSelection]);
-
-    const handleMoveUp = useCallback(() => {
-        if (queue.length <= 1) return;
-        // Don't move if it's already at the top
-        if (selectedIndex <= 0) return;
-
-        moveInQueue(selectedIndex, selectedIndex - 1);
-        // Select the moved item in its new position
-        updateSelection(selectedIndex - 1, "up");
-    }, [queue, selectedIndex, moveInQueue, updateSelection]);
+    const handleShuffleAndPlay = useCallback(async () => {
+        if (results.length === 0) return;
+        await shuffleAndPlay(results);
+        onClose();
+    }, [results, shuffleAndPlay, onClose]);
 
     const bindings = useMemo(
         () => [
@@ -115,7 +117,7 @@ export default function Queue() {
                     const idx = nav.next();
                     updateSelection(idx, "down");
                 },
-                when: () => queue.length > 0,
+                when: () => results.length > 0,
             },
             {
                 keys: "k",
@@ -123,7 +125,7 @@ export default function Queue() {
                     const idx = nav.prev();
                     updateSelection(idx, "up");
                 },
-                when: () => queue.length > 0,
+                when: () => results.length > 0,
             },
             {
                 keys: "gg",
@@ -131,7 +133,7 @@ export default function Queue() {
                     const idx = nav.first();
                     updateSelection(idx, "auto");
                 },
-                when: () => queue.length > 0,
+                when: () => results.length > 0,
             },
             {
                 keys: "G",
@@ -139,30 +141,18 @@ export default function Queue() {
                     const idx = nav.last();
                     updateSelection(idx, "auto");
                 },
-                when: () => queue.length > 0,
-            },
-            {
-                keys: "N",
-                action: handleMoveDown,
-                when: () => queue.length > 0,
-                noRepeat: true,
-            },
-            {
-                keys: "P",
-                action: handleMoveUp,
-                when: () => queue.length > 0,
-                noRepeat: true,
+                when: () => results.length > 0,
             },
             {
                 keys: "Enter",
                 action: handlePlay,
-                when: () => queue.length > 0,
+                when: () => results.length > 0,
                 noRepeat: true,
             },
             {
-                keys: "x",
-                action: handleRemove,
-                when: () => queue.length > 0,
+                keys: "a",
+                action: handleAddSelectionToQueue,
+                when: () => results.length > 0,
                 noRepeat: true,
             },
             {
@@ -175,49 +165,82 @@ export default function Queue() {
             },
             {
                 keys: "S",
-                action: shuffleQueue,
-                when: () => queue.length > 0,
+                action: handleShuffleAndPlay,
+                when: () => results.length > 0,
+                noRepeat: true,
+            },
+            {
+                keys: ["ZZ", "Escape"],
+                action: onClose,
+                noRepeat: true,
+            },
+            {
+                keys: "/",
+                action: () => {
+                    inputRef.current?.focus();
+                },
                 noRepeat: true,
             },
         ],
         [
             nav,
-            queue.length,
+            results.length,
             updateSelection,
-            handlePlay,
-            handleRemove,
-            shuffleQueue,
             togglePlay,
-            handleMoveDown,
-            handleMoveUp,
+            handlePlay,
+            handleAddSelectionToQueue,
+            handleShuffleAndPlay,
             currentSong,
+            onClose,
         ],
     );
 
     useVim({ bindings });
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            inputRef.current?.blur();
+            return;
+        }
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handlePlay();
+            return;
+        }
+    };
+
     return (
-        <div className="h-full w-full bg-background text-foreground flex flex-col">
-            <div className="p-4 border-b border-border bg-muted/20 backdrop-blur-sm">
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                    <Music className="h-5 w-5" />
-                    Queue ({queue.length})
-                </h1>
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-xl text-foreground">
+            {/* Search Input Area */}
+            <div className="p-4 border-b border-border">
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search..."
+                    className="w-full bg-transparent text-xl font-medium outline-none placeholder:text-muted-foreground"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck="false"
+                />
             </div>
 
-            <div className="flex-1 relative overflow-hidden">
-                {queue.length === 0 ? (
+            {/* Results List */}
+            <div className="flex-1 overflow-hidden">
+                {results.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
-                        <p>Queue is empty.</p>
-                        <p className="text-sm">
-                            Press 'q' to go home and add songs.
-                        </p>
+                        <Music className="h-12 w-12 opacity-20" />
+                        <p>No results found.</p>
                     </div>
                 ) : (
                     <TableVirtuoso
                         ref={virtuosoRef}
-                        data={queue}
-                        overscan={200}
+                        data={results}
+                        overscan={20}
                         className="h-full w-full scroll-pt-11"
                         fixedHeaderContent={() => (
                             <tr className="bg-muted/70 backdrop-blur-md border-b-2 border-border text-xs text-muted-foreground uppercase">
@@ -236,11 +259,10 @@ export default function Queue() {
                             </tr>
                         )}
                         itemContent={(index, song) => {
-                            // Check if this specific instance in queue is playing.
-                            // Since queue can have duplicates?
-                            // Our logic relies on currentIndex.
-                            const isPlayingCurrent = index === currentIndex;
+                            const isPlayingCurrent =
+                                currentSong?.id === song.id;
 
+                            // Text color logic
                             const textColorClass = isPlayingCurrent
                                 ? "text-green-500"
                                 : "text-foreground";
@@ -289,13 +311,15 @@ export default function Queue() {
                             TableRow: (props) => {
                                 const index = props["data-index"];
                                 const isFocused = selectedIndex === index;
-                                const isPlayingCurrent = index === currentIndex;
+                                const isPlayingCurrent =
+                                    currentSong?.id === results[index].id;
                                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 const { item: _item, ...rest } = props;
 
                                 let className =
-                                    "group cursor-default select-none border-l-2 ";
+                                    "cursor-pointer select-none border-l-2 ";
 
+                                // Border logic
                                 if (isPlayingCurrent) {
                                     className += "border-l-green-500 ";
                                 } else if (isFocused) {
@@ -304,6 +328,7 @@ export default function Queue() {
                                     className += "border-l-transparent ";
                                 }
 
+                                // Background logic
                                 if (isFocused) {
                                     className += "bg-accent ";
                                 } else {
@@ -314,9 +339,13 @@ export default function Queue() {
                                     <tr
                                         {...rest}
                                         className={className}
-                                        onClick={() => updateSelection(index)}
-                                        onDoubleClick={() =>
-                                            setCurrentIndex(index)
+                                        onClick={() => {
+                                            setSelectedIndex(index);
+                                            play(results[index], results);
+                                            onClose();
+                                        }}
+                                        onMouseEnter={() =>
+                                            setSelectedIndex(index)
                                         }
                                     />
                                 );

@@ -196,7 +196,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Now expose these as stable functions that update state
     const togglePlay = useCallback(async () => {
-        const { currentIndex, isPlaying } = stateRef.current;
+        const { queue, currentIndex, isPlaying } = stateRef.current;
         const currentSong = queue[currentIndex];
         if (!currentSong) return;
 

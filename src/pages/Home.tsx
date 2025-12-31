@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import Loading from "@/components/Loading";
+import Search from "@/components/Search";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
 import { SongData } from "@/types";
 import { usePlayer } from "@/context/PlayerContext";
@@ -13,6 +14,7 @@ export default function Home() {
     const [songs, setSongs] = useState<SongData[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay } =
         usePlayer();
@@ -121,7 +123,7 @@ export default function Home() {
                     const idx = nav.next();
                     updateSelection(idx, "down");
                 },
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
             },
             {
                 keys: "k",
@@ -129,7 +131,7 @@ export default function Home() {
                     const idx = nav.prev();
                     updateSelection(idx, "up");
                 },
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
             },
             {
                 keys: "gg",
@@ -137,7 +139,7 @@ export default function Home() {
                     const idx = nav.first();
                     updateSelection(idx, "auto");
                 },
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
             },
             {
                 keys: "G",
@@ -145,34 +147,45 @@ export default function Home() {
                     const idx = nav.last();
                     updateSelection(idx, "auto");
                 },
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
             },
             {
                 keys: "Enter",
                 action: handlePlay,
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
                 noRepeat: true,
             },
             {
                 keys: "a",
                 action: handleAddSelectionToQueue,
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
                 noRepeat: true,
             },
             {
-                keys: "s",
-                action: togglePlay,
+                keys: " ",
+                action: () => {
+                    if (currentSong) togglePlay();
+                    else handlePlay();
+                },
+                when: () => !isSearchOpen,
                 noRepeat: true,
             },
             {
                 keys: "S",
                 action: handleShuffleAndPlay,
-                when: () => (songs?.length ?? 0) > 0,
+                when: () => (songs?.length ?? 0) > 0 && !isSearchOpen,
                 noRepeat: true,
             },
             {
                 keys: "ZZ",
                 action: () => setLocation("/"),
+                when: () => !isSearchOpen,
+                noRepeat: true,
+            },
+            {
+                keys: "/",
+                action: () => setIsSearchOpen(true),
+                when: () => !isSearchOpen,
                 noRepeat: true,
             },
         ],
@@ -184,6 +197,8 @@ export default function Home() {
             handlePlay,
             handleAddSelectionToQueue,
             handleShuffleAndPlay,
+            currentSong,
+            isSearchOpen,
         ],
     );
 
@@ -201,6 +216,9 @@ export default function Home() {
 
     return (
         <div className="h-full w-full bg-background text-foreground flex flex-col">
+            {isSearchOpen && songs && (
+                <Search songs={songs} onClose={() => setIsSearchOpen(false)} />
+            )}
             <div className="flex-1 relative overflow-hidden">
                 {songs.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
