@@ -1,6 +1,6 @@
 # Ample
 
-A keyboard-centric music player. It is **A**bhik's **M**usic **Pl**ay**E**r.
+A keyboard-centric music player. It is **A**bhik's **M**usic **PL**ay**E**r.
 
 ## Why?
 
