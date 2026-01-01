@@ -40,3 +40,4 @@ lofty = "0.22.4"
 # async
 tokio = { version = "1", features = ["fs", "rt", "time"] }
 tauri-plugin-dialog = "2"
+rayon = "1.11.0"

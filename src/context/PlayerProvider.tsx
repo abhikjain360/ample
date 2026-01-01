@@ -129,40 +129,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const removeFromQueue = useCallback(
-        (index: number) => {
-            setQueueState((prev) => {
-                const newQueue = [...prev];
-                newQueue.splice(index, 1);
+        async (index: number) => {
+            const { queue, currentIndex } = stateRef.current;
+            const newQueue = [...queue];
+            newQueue.splice(index, 1);
 
-                const currentIdx = stateRef.current.currentIndex;
-                if (index < currentIdx) {
-                    setCurrentIndexState((c) => c - 1);
-                } else if (index === currentIdx) {
-                    // Removing currently playing song
-                    if (newQueue.length === 0) {
-                        stop();
-                        setCurrentIndexState(-1);
-                    } else {
-                        // Play the next one (which falls into the same index)
-                        // But strictly, we might just want to stop or let it finish?
-                        // User expectation: if I remove playing song, it probably stops or skips.
-                        // Let's stop for safety or skip?
-                        // If we don't do anything, the index points to the next song but audio is playing the old one?
-                        // Actually audio keeps playing the old ID.
-                        // Ideally we should probably play the next one.
-                        if (index < newQueue.length) {
-                            // playSong(newQueue[index]); // This would auto play
-                            // Let's just adjust index.
-                            setCurrentIndexState(index);
-                        } else {
-                            setCurrentIndexState(newQueue.length - 1);
-                        }
+            setQueueState(newQueue);
+
+            if (index < currentIndex) {
+                setCurrentIndexState((c) => c - 1);
+            } else if (index === currentIndex) {
+                if (newQueue.length === 0) {
+                    await stop();
+                    setCurrentIndexState(-1);
+                } else {
+                    let nextIndex = index;
+                    if (nextIndex >= newQueue.length) {
+                        nextIndex = newQueue.length - 1;
                     }
+                    setCurrentIndexState(nextIndex);
+                    await playSong(newQueue[nextIndex]);
                 }
-                return newQueue;
-            });
+            }
         },
-        [stop],
+        [stop, playSong],
     );
 
     const clearQueue = useCallback(() => {

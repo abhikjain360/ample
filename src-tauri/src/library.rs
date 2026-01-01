@@ -11,6 +11,7 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
+use rayon::prelude::*;
 use serde::Serialize;
 
 use crate::settings::SettingsState;
@@ -31,6 +32,8 @@ impl Library {
         let mut to_explore = VecDeque::from([0]);
         let mut visited = HashSet::new();
         let mut children = vec![];
+
+        let mut candidate_files = Vec::new();
 
         while let Some(current) = to_explore.pop_front() {
             let path = &me.arena[&current].path;
@@ -55,17 +58,7 @@ impl Library {
                     continue;
                 }
 
-                let file_path = path.clone();
-                let Ok(Ok(file)) = tokio::task::spawn_blocking(move || File::new(file_path))
-                    .await
-                    .inspect_err(|e| {
-                        log::error!("metadata read job ended unsuccessfully for file {path:?}: {e}")
-                    })
-                else {
-                    continue;
-                };
-
-                me.files.push(file);
+                candidate_files.push(path.clone());
                 children.push(path);
             }
 
@@ -75,6 +68,23 @@ impl Library {
             );
         }
 
+        // Parallel processing of metadata
+        let files = tokio::task::spawn_blocking(move || {
+            candidate_files
+                .into_par_iter()
+                .filter_map(|path| match File::new(path.clone()) {
+                    Ok(file) => Some(file),
+                    Err(e) => {
+                        log::error!("metadata read failed for file {path:?}: {e}");
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .await
+        .expect("blocking task failed");
+
+        me.files = files;
         me.files.sort_by(|a, b| a.path.cmp(&b.path));
 
         Ok(me)

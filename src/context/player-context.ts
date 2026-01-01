@@ -16,7 +16,7 @@ export interface PlayerStateContextType {
     seekForward: (seconds: number) => Promise<void>;
     seekBackward: (seconds: number) => Promise<void>;
     addToQueue: (songs: SongData[]) => void;
-    removeFromQueue: (index: number) => void;
+    removeFromQueue: (index: number) => Promise<void>;
     clearQueue: () => void;
     shuffleQueue: () => void;
     shuffleAndPlay: (songs: SongData[]) => Promise<void>;
