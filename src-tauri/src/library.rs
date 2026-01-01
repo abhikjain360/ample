@@ -123,30 +123,6 @@ impl File {
 pub type LibraryState<'a> = tauri::State<'a, RwLock<Option<Library>>>;
 
 #[tauri::command]
-pub async fn library_new(
-    library: LibraryState<'_>,
-    settings: SettingsState<'_>,
-) -> crate::Result<bool> {
-    let Some(new_library_path) = rfd::AsyncFileDialog::new().pick_folder().await else {
-        return Ok(false);
-    };
-    let path: PathBuf = new_library_path.into();
-    let new_library = Library::walker(path.clone()).await?;
-    library.write().unwrap().replace(new_library);
-
-    let mut settings = settings.write().unwrap();
-    settings.libraries.retain(|p| {
-        p.to_string_lossy().to_ascii_lowercase() != path.to_string_lossy().to_ascii_lowercase()
-    });
-    settings.libraries.push_front(path);
-    if let Err(e) = settings.save() {
-        log::error!("failed to save settings: {}", e);
-    };
-
-    Ok(true)
-}
-
-#[tauri::command]
 pub async fn library_open(
     path: String,
     library: LibraryState<'_>,

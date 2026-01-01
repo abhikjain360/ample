@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,9 +28,13 @@ export default function Welcome() {
     const handleNewLibrary = useCallback(async () => {
         setIsLoading(true);
         try {
-            const success = await invoke<boolean>("library_new");
+            const selected = await open({
+                directory: true,
+                multiple: false,
+            });
 
-            if (success) {
+            if (selected && typeof selected === "string") {
+                await invoke<void>("library_open", { path: selected });
                 toast.success("Library loaded successfully");
                 setLocation("/home");
             } else {

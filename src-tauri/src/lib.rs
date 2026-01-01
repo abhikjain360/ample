@@ -35,6 +35,7 @@ pub fn run() {
     let engine = Engine::init().expect("error when initializing miniaudio engine");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(config)
         .manage(RwLock::new(settings))
         .manage(Arc::new(RwLock::new(engine)))
@@ -51,7 +52,6 @@ pub fn run() {
             settings::settings_list_libraries,
             settings::settings_save,
             settings::settings_remove_library,
-            library::library_new,
             library::library_open,
             library::library_list_songs,
             miniaudio::song_start,
