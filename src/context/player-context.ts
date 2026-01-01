@@ -6,11 +6,15 @@ export interface PlayerStateContextType {
     currentIndex: number;
     currentSong: SongData | null;
     isPlaying: boolean;
+    isRepeating: boolean;
 
     play: (song: SongData, newQueue?: SongData[]) => Promise<void>;
     togglePlay: () => Promise<void>;
+    toggleRepeat: () => void;
     playNext: () => Promise<void>;
     playPrev: () => Promise<void>;
+    seekForward: (seconds: number) => Promise<void>;
+    seekBackward: (seconds: number) => Promise<void>;
     addToQueue: (songs: SongData[]) => void;
     removeFromQueue: (index: number) => void;
     clearQueue: () => void;

@@ -62,6 +62,7 @@
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
+    --color-chart-peach: var(--chart-peach);
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -113,6 +114,7 @@
     --chart-3: #f9e2af; /* Yellow */
     --chart-4: #a6e3a1; /* Green */
     --chart-5: #cba6f7; /* Mauve */
+    --chart-peach: #fab387; /* Peach */
 
     --sidebar: #181825; /* Mantle */
     --sidebar-foreground: #cdd6f4; /* Text */

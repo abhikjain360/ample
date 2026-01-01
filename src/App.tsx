@@ -15,7 +15,15 @@ import { Player } from "@/components/Player";
 import { useVim } from "@/hooks/useVim";
 
 function AppContent() {
-    const { playNext, playPrev, clearQueue } = usePlayer();
+    const {
+        playNext,
+        playPrev,
+        clearQueue,
+        seekForward,
+        seekBackward,
+        toggleRepeat,
+        isRepeating,
+    } = usePlayer();
     const [location, setLocation] = useLocation();
 
     useEffect(() => {
@@ -58,8 +66,31 @@ function AppContent() {
                 action: () => setLocation("/search"),
                 noRepeat: true,
             },
+            {
+                keys: "l",
+                action: () => seekForward(3),
+            },
+            {
+                keys: "h",
+                action: () => seekBackward(3),
+            },
+            {
+                keys: "r",
+                action: toggleRepeat,
+                noRepeat: true,
+            },
         ],
-        [location, setLocation, playNext, playPrev, clearQueue],
+        [
+            location,
+            setLocation,
+            playNext,
+            playPrev,
+            clearQueue,
+            seekForward,
+            seekBackward,
+            toggleRepeat,
+            isRepeating,
+        ],
     );
 
     useVim({ bindings });

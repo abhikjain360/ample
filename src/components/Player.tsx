@@ -1,8 +1,14 @@
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Repeat } from "lucide-react";
 import { usePlayer, usePlayerProgress } from "@/hooks/usePlayer";
 
 export function Player() {
-    const { currentSong: song, isPlaying, togglePlay } = usePlayer();
+    const {
+        currentSong: song,
+        isPlaying,
+        togglePlay,
+        isRepeating,
+        toggleRepeat,
+    } = usePlayer();
     const progress = usePlayerProgress();
 
     if (!song) return null;
@@ -49,9 +55,22 @@ export function Player() {
             </div>
 
             <div className="flex-1 flex items-center justify-end gap-3 text-xs font-mono text-muted-foreground">
-                <span>{formatTime(currentMinutes, currentSeconds)}</span>
-                <span>/</span>
-                <span>{formatTime(totalMinutes, totalSeconds)}</span>
+                <button
+                    onClick={toggleRepeat}
+                    className={`transition-all duration-200 ${
+                        isRepeating
+                            ? "text-chart-peach opacity-100 drop-shadow-[0_0_8px_rgba(250,179,135,0.5)]"
+                            : "text-muted-foreground opacity-20 hover:opacity-50"
+                    }`}
+                    title="Toggle Repeat (r)"
+                >
+                    <Repeat className="h-4 w-4" />
+                </button>
+                <div className="flex gap-3">
+                    <span>{formatTime(currentMinutes, currentSeconds)}</span>
+                    <span>/</span>
+                    <span>{formatTime(totalMinutes, totalSeconds)}</span>
+                </div>
             </div>
         </div>
     );

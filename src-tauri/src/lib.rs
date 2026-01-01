@@ -57,6 +57,8 @@ pub fn run() {
             miniaudio::song_start,
             miniaudio::song_play,
             miniaudio::song_pause,
+            miniaudio::song_seek_forward,
+            miniaudio::song_seek_backward,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

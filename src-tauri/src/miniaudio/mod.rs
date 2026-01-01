@@ -36,7 +36,7 @@ impl Engine {
             let sound = NonNull::new_unchecked(Box::into_raw(sound)).cast();
 
             let result = ma_engine_init(ptr::null(), inner.as_ptr());
-            Error::from_i32(result)?;
+            Error::from_ma_result(result)?;
 
             Ok(Self {
                 inner,
@@ -56,7 +56,7 @@ impl Engine {
             // drops the box, deallocs the str AFTER the sound referncing it has been uninit too
             self.sound_str = path_to_c_chars(path);
 
-            Error::from_i32(ma_sound_init_from_file(
+            Error::from_ma_result(ma_sound_init_from_file(
                 self.inner.as_ptr(),
                 self.sound_str.as_mut_ptr(),
                 ma_sound_flags_MA_SOUND_FLAG_STREAM,
@@ -68,7 +68,45 @@ impl Engine {
             self.is_sound_init = true;
             self.generation = self.generation.wrapping_add(1);
 
-            Error::from_i32(ma_sound_start(self.sound.as_ptr()))
+            Error::from_ma_result(ma_sound_start(self.sound.as_ptr()))
+        }
+    }
+
+    pub fn seek_forward(&mut self, seconds: f32) -> Result<(), Error> {
+        if self.is_sound_init {
+            let sound = self.sound.as_ptr();
+            unsafe {
+                let mut cursor = 0.0;
+                let mut length = 0.0;
+                Error::from_ma_result(ma_sound_get_cursor_in_seconds(sound, &mut cursor))?;
+                Error::from_ma_result(ma_sound_get_length_in_seconds(sound, &mut length))?;
+                let mut new_cursor = cursor + seconds;
+                if new_cursor + f32::EPSILON > length {
+                    new_cursor = length - f32::EPSILON;
+                }
+                Error::from_ma_result(ma_sound_seek_to_second(sound, new_cursor))
+            }
+        } else {
+            Err(Error::InvalidOperation)
+        }
+    }
+
+    pub fn seek_backward(&mut self, seconds: f32) -> Result<(), Error> {
+        if self.is_sound_init {
+            let sound = self.sound.as_ptr();
+            unsafe {
+                let mut cursor = 0.0;
+                let mut length = 0.0;
+                Error::from_ma_result(ma_sound_get_cursor_in_seconds(sound, &mut cursor))?;
+                Error::from_ma_result(ma_sound_get_length_in_seconds(sound, &mut length))?;
+                let mut new_cursor = cursor - seconds;
+                if new_cursor - f32::EPSILON < 0.0 {
+                    new_cursor = 0.0;
+                }
+                Error::from_ma_result(ma_sound_seek_to_second(sound, new_cursor))
+            }
+        } else {
+            Err(Error::InvalidOperation)
         }
     }
 
@@ -94,14 +132,14 @@ impl Engine {
 
     pub fn play(&mut self) -> Result<(), Error> {
         if self.is_sound_init {
-            Error::from_i32(unsafe { ma_sound_start(self.sound.as_ptr()) })?;
+            Error::from_ma_result(unsafe { ma_sound_start(self.sound.as_ptr()) })?;
         }
         Ok(())
     }
 
     pub fn pause(&mut self) -> Result<(), Error> {
         if self.is_sound_init {
-            Error::from_i32(unsafe { ma_sound_stop(self.sound.as_ptr()) })?;
+            Error::from_ma_result(unsafe { ma_sound_stop(self.sound.as_ptr()) })?;
         }
         Ok(())
     }
@@ -183,15 +221,23 @@ pub async fn song_start(
 #[tauri::command]
 pub fn song_pause(engine: EngineState<'_>) -> crate::Result<()> {
     let mut engine = engine.write().unwrap();
-    engine.pause()?;
-
-    Ok(())
+    engine.pause().map_err(Into::into)
 }
 
 #[tauri::command]
 pub fn song_play(engine: EngineState<'_>) -> crate::Result<()> {
     let mut engine = engine.write().unwrap();
-    engine.play()?;
+    engine.play().map_err(Into::into)
+}
 
-    Ok(())
+#[tauri::command]
+pub fn song_seek_forward(engine: EngineState<'_>, seconds: f32) -> crate::Result<()> {
+    let mut engine = engine.write().unwrap();
+    engine.seek_forward(seconds).map_err(Into::into)
+}
+
+#[tauri::command]
+pub fn song_seek_backward(engine: EngineState<'_>, seconds: f32) -> crate::Result<()> {
+    let mut engine = engine.write().unwrap();
+    engine.seek_backward(seconds).map_err(Into::into)
 }

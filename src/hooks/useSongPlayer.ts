@@ -69,6 +69,22 @@ export function useSongPlayer(onSongEnd: () => void) {
         }
     }, []);
 
+    const seekForward = useCallback(async (seconds: number) => {
+        try {
+            await invoke("song_seek_forward", { seconds });
+        } catch (e) {
+            console.error("Failed to seek forward", e);
+        }
+    }, []);
+
+    const seekBackward = useCallback(async (seconds: number) => {
+        try {
+            await invoke("song_seek_backward", { seconds });
+        } catch (e) {
+            console.error("Failed to seek backward", e);
+        }
+    }, []);
+
     return {
         isPlaying,
         setIsPlaying, // Export setter for manual overrides if needed
@@ -77,5 +93,7 @@ export function useSongPlayer(onSongEnd: () => void) {
         playSong,
         toggle,
         stop,
+        seekForward,
+        seekBackward,
     };
 }

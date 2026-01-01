@@ -17,37 +17,49 @@ import {
 export function PlayerProvider({ children }: { children: ReactNode }) {
     const [queue, setQueueState] = useState<SongData[]>([]);
     const [currentIndex, setCurrentIndexState] = useState<number>(-1);
+    const [isRepeating, setIsRepeating] = useState(false);
 
     // Stable state ref for internal logic to avoid closures
-    const stateRef = useRef({ queue, currentIndex });
+    const stateRef = useRef({ queue, currentIndex, isRepeating });
     useEffect(() => {
-        stateRef.current = { queue, currentIndex };
-    }, [queue, currentIndex]);
+        stateRef.current = { queue, currentIndex, isRepeating };
+    }, [queue, currentIndex, isRepeating]);
 
     // Forward declaration for the cyclic dependency
     const playNextInternalRef = useRef<() => Promise<void>>(async () => {});
 
     // Initialize the low-level player
-    const { isPlaying, progress, playSong, toggle, stop } = useSongPlayer(() =>
-        playNextInternalRef.current(),
-    );
+    const {
+        isPlaying,
+        progress,
+        playSong,
+        toggle,
+        stop,
+        seekForward,
+        seekBackward,
+    } = useSongPlayer(() => playNextInternalRef.current());
 
     // --- Actions ---
 
     const playNextInternal = useCallback(async () => {
-        const { queue, currentIndex } = stateRef.current;
+        const { queue, currentIndex, isRepeating } = stateRef.current;
         if (queue.length === 0) return;
 
-        const nextIndex = currentIndex + 1;
-        if (nextIndex < queue.length) {
-            setCurrentIndexState(nextIndex);
-            const song = queue[nextIndex];
-            await playSong(song);
-        } else {
-            // End of queue
-            await stop();
-            setCurrentIndexState(-1); // Optionally reset or stay at end
+        let nextIndex = currentIndex + 1;
+        if (nextIndex >= queue.length) {
+            if (isRepeating) {
+                nextIndex = 0;
+            } else {
+                // End of queue
+                await stop();
+                setCurrentIndexState(-1);
+                return;
+            }
         }
+
+        setCurrentIndexState(nextIndex);
+        const song = queue[nextIndex];
+        await playSong(song);
     }, [playSong, stop]);
 
     const playPrevInternal = useCallback(async () => {
@@ -107,6 +119,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // We rely on the hook's isPlaying state
         await toggle(!isPlaying);
     }, [toggle, isPlaying]);
+
+    const toggleRepeat = useCallback(() => {
+        setIsRepeating((prev) => !prev);
+    }, []);
 
     const addToQueue = useCallback((songs: SongData[]) => {
         setQueueState((prev) => [...prev, ...songs]);
@@ -227,10 +243,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             currentIndex,
             currentSong: queue[currentIndex] || null,
             isPlaying,
+            isRepeating,
             play,
             togglePlay,
+            toggleRepeat,
             playNext: playNextInternal,
             playPrev: playPrevInternal,
+            seekForward,
+            seekBackward,
             addToQueue,
             removeFromQueue,
             clearQueue,
@@ -244,10 +264,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             queue,
             currentIndex,
             isPlaying,
+            isRepeating,
             play,
             togglePlay,
+            toggleRepeat,
             playNextInternal,
             playPrevInternal,
+            seekForward,
+            seekBackward,
             addToQueue,
             removeFromQueue,
             clearQueue,

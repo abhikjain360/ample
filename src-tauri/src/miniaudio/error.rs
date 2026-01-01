@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use super::ma_result;
+
 #[repr(i32)]
 #[derive(Debug, Error, Clone, Copy, PartialEq, Eq)]
 #[error("miniaudio error: {0}")]
@@ -147,7 +149,7 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn from_i32(code: i32) -> Result<(), Error> {
+    pub fn from_ma_result(code: ma_result) -> Result<(), Error> {
         match code {
             0 => Ok(()),
             -1 => Err(Error::Error),
