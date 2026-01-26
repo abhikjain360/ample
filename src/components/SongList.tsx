@@ -123,8 +123,6 @@ function SongList({
                         <tr
                             {...rest}
                             className={className}
-                            onClick={() => onSelect(index)}
-                            onMouseEnter={() => onSelect(index)}
                             onDoubleClick={() => onPlay(songs[index])}
                         />
                     );

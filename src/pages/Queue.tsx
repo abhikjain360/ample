@@ -315,7 +315,6 @@ export default function Queue() {
                                     <tr
                                         {...rest}
                                         className={className}
-                                        onClick={() => updateSelection(index)}
                                         onDoubleClick={() =>
                                             setCurrentIndex(index)
                                         }
