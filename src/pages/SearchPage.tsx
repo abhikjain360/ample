@@ -287,7 +287,6 @@ export default function SearchPage() {
                         songs={results}
                         currentSong={currentSong}
                         selectedIndex={selectedIndex}
-                        onSelect={(index) => updateSelection(index, "auto")}
                         onPlay={(song) => play(song, results)}
                         virtuosoRef={virtuosoRef}
                         overscan={50}

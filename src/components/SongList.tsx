@@ -8,7 +8,6 @@ interface SongListProps {
     songs: SongData[];
     currentSong: SongData | null;
     selectedIndex: number;
-    onSelect: (index: number) => void;
     onPlay: (song: SongData) => void;
     virtuosoRef: React.RefObject<VirtuosoHandle | null>;
     overscan?: number;
@@ -18,7 +17,6 @@ function SongList({
     songs,
     currentSong,
     selectedIndex,
-    onSelect,
     onPlay,
     virtuosoRef,
     overscan = 200,

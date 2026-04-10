@@ -1,15 +1,15 @@
 use std::sync::{Arc, RwLock};
 
+use audio::Engine;
 use config::Config;
 use error::Result;
 use library::Library;
-use miniaudio::Engine;
 
+pub mod audio;
 pub mod cli;
 pub mod config;
 pub mod error;
 pub mod library;
-pub mod miniaudio;
 pub mod settings;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -32,7 +32,7 @@ pub fn run() {
 
     let library = Option::<Library>::None;
 
-    let engine = Engine::init().expect("error when initializing miniaudio engine");
+    let engine = Engine::init().expect("error when initializing audio engine");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -54,11 +54,11 @@ pub fn run() {
             settings::settings_remove_library,
             library::library_open,
             library::library_list_songs,
-            miniaudio::song_start,
-            miniaudio::song_play,
-            miniaudio::song_pause,
-            miniaudio::song_seek_forward,
-            miniaudio::song_seek_backward,
+            audio::song_start,
+            audio::song_play,
+            audio::song_pause,
+            audio::song_seek_forward,
+            audio::song_seek_backward,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

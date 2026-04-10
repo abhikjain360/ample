@@ -207,7 +207,6 @@ export default function Home() {
                         songs={songs}
                         currentSong={currentSong}
                         selectedIndex={selectedIndex}
-                        onSelect={(index) => updateSelection(index, "auto")}
                         onPlay={(song) => play(song, songs)}
                         virtuosoRef={virtuosoRef}
                         overscan={200}

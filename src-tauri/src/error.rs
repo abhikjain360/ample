@@ -39,5 +39,5 @@ macro_rules! define_error {
 define_error!(
     IO => std::io::Error,
     Settings => crate::settings::SettingsInitError,
-    Audio => crate::miniaudio::Error,
+    Audio => crate::audio::Error,
 );
