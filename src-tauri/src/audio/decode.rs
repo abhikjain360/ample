@@ -8,20 +8,26 @@ use std::{
     time::Duration,
 };
 
+use audiopus::coder::GenericCtl;
 use rubato::{
     Async, FixedAsync, Resampler, SincInterpolationParameters, SincInterpolationType,
     WindowFunction,
 };
 use symphonia::core::{
     audio::SampleBuffer,
-    codecs::{DecoderOptions, CODEC_TYPE_NULL},
+    codecs::{DecoderOptions, CODEC_TYPE_NULL, CODEC_TYPE_OPUS},
     errors::Error as SymphoniaError,
-    formats::{FormatOptions, SeekMode, SeekTo},
+    formats::{FormatOptions, Packet, SeekMode, SeekTo},
     io::MediaSourceStream,
     meta::MetadataOptions,
     probe::Hint,
     units::Time,
 };
+
+// Opus always decodes to 48 kHz PCM regardless of the encoder's original rate.
+const OPUS_DECODE_RATE: u32 = 48_000;
+// Max opus frame duration is 120 ms → 5760 samples/channel at 48 kHz.
+const OPUS_MAX_FRAME_SAMPLES: usize = 5760;
 
 use super::SharedState;
 
@@ -167,16 +173,32 @@ pub fn run(
         .ok_or_else(|| "no supported audio track found".to_string())?;
 
     let track_id = track.id;
-    let source_sample_rate = track.codec_params.sample_rate.unwrap_or(44100);
+    let is_opus = track.codec_params.codec == CODEC_TYPE_OPUS;
     let source_channels = track
         .codec_params
         .channels
         .map(|c| c.count())
         .unwrap_or(2);
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &DecoderOptions::default())
-        .map_err(|e| format!("unsupported codec: {e}"))?;
+    // Opus streams always decode to 48 kHz regardless of the codec_params rate
+    // (which reflects the encoder's original input rate, not decoder output).
+    let source_sample_rate = if is_opus {
+        OPUS_DECODE_RATE
+    } else {
+        track.codec_params.sample_rate.unwrap_or(44100)
+    };
+
+    let mut decoder = if is_opus {
+        AudioDecoder::new_opus(source_channels)?
+    } else {
+        let sym = symphonia::default::get_codecs()
+            .make(&track.codec_params, &DecoderOptions::default())
+            .map_err(|e| format!("unsupported codec: {e}"))?;
+        AudioDecoder::Symphonia {
+            decoder: sym,
+            sample_buf: None,
+        }
+    };
 
     // Seek if starting from a non-zero position
     if start_position_secs > 0.0 {
@@ -221,7 +243,6 @@ pub fn run(
 
     // Intermediate buffer to accumulate decoded frames for fixed-size resampler chunks
     let mut intermediate_buf: Vec<f32> = Vec::with_capacity(chunk_size * device_channels as usize);
-    let mut sample_buf: Option<SampleBuffer<f32>> = None;
 
     // ── Decode loop ──
     loop {
@@ -242,36 +263,24 @@ pub fn run(
             continue;
         }
 
-        let decoded = match decoder.decode(&packet) {
-            Ok(decoded) => decoded,
-            Err(SymphoniaError::DecodeError(e)) => {
-                log::warn!("decode error (skipping packet): {e}");
+        let samples = match decoder.decode(&packet) {
+            Ok(s) => s,
+            Err(DecodeErr::Skip(msg)) => {
+                log::warn!("decode error (skipping packet): {msg}");
                 continue;
             }
-            Err(SymphoniaError::IoError(e)) => {
-                log::warn!("io error during decode (skipping): {e}");
-                continue;
+            Err(DecodeErr::Fatal(msg)) => {
+                log::warn!("fatal decode error: {msg}");
+                break;
             }
-            Err(_) => break,
         };
-
-        // Lazily create the sample buffer for f32 interleaved conversion
-        if sample_buf.is_none() {
-            let spec = *decoded.spec();
-            let duration = decoded.capacity() as u64;
-            sample_buf = Some(SampleBuffer::<f32>::new(duration, spec));
-        }
-
-        let buf = sample_buf.as_mut().unwrap();
-        buf.copy_interleaved_ref(decoded);
-        let samples = buf.samples();
 
         if samples.is_empty() {
             continue;
         }
 
         // Channel conversion (source → device channel count)
-        let converted = convert_channels(samples, source_channels, device_channels as usize);
+        let converted = convert_channels(&samples, source_channels, device_channels as usize);
 
         if let Some(ref mut resampler) = resampler {
             // Accumulate decoded frames, process in fixed-size chunks
@@ -347,6 +356,83 @@ pub fn run(
     shared.playback_finished.store(true, Ordering::Release);
 
     Ok(())
+}
+
+// ── Unified decoder (symphonia codecs + audiopus for Opus) ──────────────────
+
+enum AudioDecoder {
+    Symphonia {
+        decoder: Box<dyn symphonia::core::codecs::Decoder>,
+        sample_buf: Option<SampleBuffer<f32>>,
+    },
+    Opus {
+        decoder: audiopus::coder::Decoder,
+        channels: usize,
+        scratch: Vec<f32>,
+    },
+}
+
+enum DecodeErr {
+    Skip(String),
+    Fatal(String),
+}
+
+impl AudioDecoder {
+    fn new_opus(channels: usize) -> Result<Self, String> {
+        let ch = match channels {
+            1 => audiopus::Channels::Mono,
+            2 => audiopus::Channels::Stereo,
+            n => return Err(format!("unsupported opus channel count: {n}")),
+        };
+        let decoder = audiopus::coder::Decoder::new(audiopus::SampleRate::Hz48000, ch)
+            .map_err(|e| format!("failed to init opus decoder: {e}"))?;
+        Ok(Self::Opus {
+            decoder,
+            channels,
+            scratch: vec![0.0; OPUS_MAX_FRAME_SAMPLES * channels],
+        })
+    }
+
+    fn reset(&mut self) {
+        match self {
+            Self::Symphonia { decoder, .. } => decoder.reset(),
+            Self::Opus { decoder, .. } => {
+                let _ = decoder.reset_state();
+            }
+        }
+    }
+
+    fn decode(&mut self, packet: &Packet) -> Result<Vec<f32>, DecodeErr> {
+        match self {
+            Self::Symphonia { decoder, sample_buf } => {
+                let decoded = match decoder.decode(packet) {
+                    Ok(d) => d,
+                    Err(SymphoniaError::DecodeError(e)) => {
+                        return Err(DecodeErr::Skip(e.to_string()))
+                    }
+                    Err(SymphoniaError::IoError(e)) => {
+                        return Err(DecodeErr::Skip(e.to_string()))
+                    }
+                    Err(e) => return Err(DecodeErr::Fatal(e.to_string())),
+                };
+                if sample_buf.is_none() {
+                    let spec = *decoded.spec();
+                    let duration = decoded.capacity() as u64;
+                    *sample_buf = Some(SampleBuffer::<f32>::new(duration, spec));
+                }
+                let buf = sample_buf.as_mut().unwrap();
+                buf.copy_interleaved_ref(decoded);
+                Ok(buf.samples().to_vec())
+            }
+            Self::Opus { decoder, channels, scratch } => {
+                let input = packet.buf();
+                let samples_per_ch = decoder
+                    .decode_float(Some(input), &mut scratch[..], false)
+                    .map_err(|e| DecodeErr::Skip(format!("opus decode: {e}")))?;
+                Ok(scratch[..samples_per_ch * *channels].to_vec())
+            }
+        }
+    }
 }
 
 // ── Resampler creation ──────────────────────────────────────────────────────
