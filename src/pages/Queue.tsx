@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useRef, useState } from "react";
+import { useMemo, useCallback, useRef, useState } from "react";
 import { Play, Clock, Music } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
@@ -17,16 +17,10 @@ export default function Queue() {
         moveInQueue,
     } = usePlayer();
 
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [selectedIndex, setSelectedIndex] = useState(
+        currentIndex !== -1 ? currentIndex : 0,
+    );
     const virtuosoRef = useRef<VirtuosoHandle>(null);
-
-    // Sync selected index with current playing song initially if possible
-    useEffect(() => {
-        if (currentIndex !== -1) {
-            setSelectedIndex(currentIndex);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const formatDuration = (duration: [number, number]) => {
         const [minutes, seconds] = duration;

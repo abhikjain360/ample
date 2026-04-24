@@ -87,29 +87,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const play = useCallback(
         async (song: SongData, newQueue?: SongData[]) => {
-            let newIndex = stateRef.current.currentIndex;
-            let activeQueue = stateRef.current.queue;
+            let newIndex: number;
 
             if (newQueue) {
-                activeQueue = newQueue;
                 setQueueState(newQueue);
                 newIndex = newQueue.findIndex((s) => s.id === song.id);
                 if (newIndex === -1) newIndex = 0;
             } else {
-                // If not replacing queue, find in existing or add
-                const idx = activeQueue.findIndex((s) => s.id === song.id);
+                const queue = stateRef.current.queue;
+                const idx = queue.findIndex((s) => s.id === song.id);
                 if (idx !== -1) {
                     newIndex = idx;
                 } else {
-                    activeQueue = [...activeQueue, song];
-                    setQueueState(activeQueue);
-                    newIndex = activeQueue.length - 1;
+                    const nextQueue = [...queue, song];
+                    setQueueState(nextQueue);
+                    newIndex = nextQueue.length - 1;
                 }
             }
 
             setCurrentIndexState(newIndex);
-            // We must update ref immediately for the synchronous logic following if any?
-            // But we can just pass the song directly.
             await playSong(song);
         },
         [playSong],
@@ -126,7 +122,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
 
         const existingIndex = queue.findIndex((s) => s.id === song.id);
-        let newQueue = [...queue];
+        const newQueue = [...queue];
         let targetIndex = currentIndex + 1;
 
         if (existingIndex !== -1) {
@@ -288,6 +284,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             isPlaying,
             isRepeating,
             play,
+            playAsNext,
             togglePlay,
             toggleRepeat,
             playNextInternal,

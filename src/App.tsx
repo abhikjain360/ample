@@ -22,7 +22,6 @@ function AppContent() {
         seekForward,
         seekBackward,
         toggleRepeat,
-        isRepeating,
     } = usePlayer();
     const [location, setLocation] = useLocation();
 
@@ -89,7 +88,6 @@ function AppContent() {
             seekForward,
             seekBackward,
             toggleRepeat,
-            isRepeating,
         ],
     );
 

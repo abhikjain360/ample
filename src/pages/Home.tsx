@@ -21,24 +21,30 @@ export default function Home() {
     const [, setLocation] = useLocation();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-    const fetchSongs = useCallback(async () => {
-        try {
-            const songList = await invoke<SongData[]>("library_list_songs");
-            setSongs(songList);
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to fetch songs", {
-                description: String(e),
-            });
-            setLocation("/");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [setLocation]);
-
     useEffect(() => {
-        fetchSongs();
-    }, [fetchSongs]);
+        let cancelled = false;
+        (async () => {
+            try {
+                const songList = await invoke<SongData[]>("library_list_songs");
+                if (!cancelled) {
+                    setSongs(songList);
+                }
+            } catch (e) {
+                console.error(e);
+                toast.error("Failed to fetch songs", {
+                    description: String(e),
+                });
+                setLocation("/");
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [setLocation]);
 
     const nav = useVimNavigation(songs ?? [], {
         onSelect: () => {
