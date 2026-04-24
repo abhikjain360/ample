@@ -15,7 +15,7 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay } =
+    const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay, playAsNext } =
         usePlayer();
 
     const [, setLocation] = useLocation();
@@ -98,6 +98,13 @@ export default function Home() {
         [songs, selectedIndex, play],
     );
 
+    const handlePlayNext = useCallback(async () => {
+        if (!songs) return;
+        const song = songs[selectedIndex];
+        if (!song) return;
+        await playAsNext(song);
+    }, [songs, selectedIndex, playAsNext]);
+
     const handleShuffleAndPlay = useCallback(async () => {
         if (!songs || songs.length === 0) return;
         await shuffleAndPlay(songs);
@@ -139,7 +146,7 @@ export default function Home() {
             },
             {
                 keys: "Enter",
-                action: () => handlePlay(true),
+                action: () => handlePlayNext(),
                 when: () => (songs?.length ?? 0) > 0,
                 noRepeat: true,
             },
@@ -175,6 +182,7 @@ export default function Home() {
             updateSelection,
             togglePlay,
             handlePlay,
+            handlePlayNext,
             handleAddSelectionToQueue,
             handleShuffleAndPlay,
             currentSong,

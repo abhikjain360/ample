@@ -36,13 +36,9 @@ thiserror = "2.0.17"
 lofty = "0.22.4"
 
 # audio playback
-symphonia = { version = "0.5", features = ["all"] }
-cpal = "0.17"
-rubato = "1.0"
-rtrb = "0.3"
+libmpv2 = "5.0.3"
 
 # async
 tokio = { version = "1", features = ["fs", "rt", "time"] }
 tauri-plugin-dialog = "2"
 rayon = "1.11.0"
-audiopus = "0.2.0"

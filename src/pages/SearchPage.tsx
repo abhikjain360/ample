@@ -18,7 +18,7 @@ export default function SearchPage() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
-    const { play, togglePlay, currentSong, addToQueue, shuffleAndPlay } =
+    const { play, togglePlay, currentSong, addToQueue, shuffleAndPlay, playAsNext } =
         usePlayer();
     const [, setLocation] = useLocation();
 
@@ -122,6 +122,13 @@ export default function SearchPage() {
         [results, selectedIndex, play],
     );
 
+    const handlePlayNext = useCallback(async () => {
+        if (results.length === 0) return;
+        const song = results[selectedIndex];
+        if (!song) return;
+        await playAsNext(song);
+    }, [results, selectedIndex, playAsNext]);
+
     const handleAddSelectionToQueue = useCallback(() => {
         if (results.length === 0) return;
         const song = results[selectedIndex];
@@ -175,7 +182,7 @@ export default function SearchPage() {
             },
             {
                 keys: "Enter",
-                action: () => handlePlay(true),
+                action: () => handlePlayNext(),
                 when: () => results.length > 0,
                 noRepeat: true,
             },
@@ -219,6 +226,7 @@ export default function SearchPage() {
             updateSelection,
             togglePlay,
             handlePlay,
+            handlePlayNext,
             handleAddSelectionToQueue,
             handleShuffleAndPlay,
             currentSong,
@@ -241,7 +249,7 @@ export default function SearchPage() {
 
         if (e.key === "Enter") {
             e.preventDefault();
-            handlePlay();
+            handlePlayNext();
             inputRef.current?.blur();
             return;
         }
