@@ -34,6 +34,15 @@ impl Engine {
             init.set_option("video", "no")?;
             init.set_option("keep-open", "no")?;
             init.set_option("idle", "yes")?;
+
+            // High-quality audio resampling
+            // SoX resampler (soxr) is the gold standard for audio resampling.
+            // If soxr is not available in the build, this option is silently ignored.
+            init.set_option("audio-swresample-o", "resampler=soxr").ok();
+            init.set_option("audio-resample-filter-size", "32")?;
+            init.set_option("audio-resample-linear", "no")?;
+            init.set_option("gapless-audio", "yes")?;
+
             Ok(())
         })
         .map_err(|e| Error::Audio(e.to_string()))?;

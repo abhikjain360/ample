@@ -1,4 +1,4 @@
-import { Play, Clock } from "lucide-react";
+import { Play, Clock, PlayCircle } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { SongData } from "@/types";
 import { formatDuration } from "@/lib/utils";
@@ -9,6 +9,7 @@ interface SongListProps {
     currentSong: SongData | null;
     selectedIndex: number;
     onPlay: (song: SongData) => void;
+    onSelect?: (index: number) => void;
     virtuosoRef: React.RefObject<VirtuosoHandle | null>;
     overscan?: number;
 }
@@ -18,6 +19,7 @@ function SongList({
     currentSong,
     selectedIndex,
     onPlay,
+    onSelect,
     virtuosoRef,
     overscan = 200,
 }: SongListProps) {
@@ -35,10 +37,10 @@ function SongList({
                     <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
                         Title
                     </th>
-                    <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
+                    <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left hidden sm:table-cell">
                         Artist
                     </th>
-                    <th className="px-4 py-3 font-medium text-right w-24 bg-muted/70 backdrop-blur-md">
+                    <th className="px-4 py-3 font-medium text-right w-24 bg-muted/70 backdrop-blur-md hidden sm:table-cell">
                         <Clock className="h-3 w-3 inline-block" />
                     </th>
                 </tr>
@@ -46,7 +48,6 @@ function SongList({
             itemContent={(index, song) => {
                 const isPlayingCurrent = currentSong?.id === song.id;
 
-                // Text color logic
                 const textColorClass = isPlayingCurrent
                     ? "text-chart-4"
                     : "text-foreground";
@@ -66,17 +67,29 @@ function SongList({
                             )}
                         </td>
                         <td
-                            className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}
+                            className={`px-4 py-3 font-medium truncate max-w-[50vw] sm:max-w-[30vw] ${textColorClass}`}
                         >
-                            {song.title}
+                            <div className="flex items-center gap-2">
+                                <span className="truncate">{song.title}</span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPlay(song);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-primary hover:text-primary/80"
+                                    title="Play"
+                                >
+                                    <PlayCircle className="h-4 w-4" />
+                                </button>
+                            </div>
                         </td>
                         <td
-                            className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}
+                            className={`px-4 py-3 truncate max-w-[20vw] hidden sm:table-cell ${mutedTextClass}`}
                         >
                             {song.artist || "Unknown Artist"}
                         </td>
                         <td
-                            className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}
+                            className={`px-4 py-3 text-right font-mono text-xs w-24 hidden sm:table-cell ${mutedTextClass}`}
                         >
                             {formatDuration(song.duration)}
                         </td>
@@ -99,9 +112,8 @@ function SongList({
                     const { item: _item, ...rest } = props;
 
                     let className =
-                        "group cursor-default select-none border-l-2 ";
+                        "group cursor-pointer select-none border-l-2 transition-colors active:bg-accent/50 ";
 
-                    // Border logic
                     if (isPlayingCurrent) {
                         className += "border-l-chart-4 ";
                     } else if (isFocused) {
@@ -110,7 +122,6 @@ function SongList({
                         className += "border-l-transparent ";
                     }
 
-                    // Background logic
                     if (isFocused) {
                         className += "bg-accent ";
                     } else {
@@ -121,6 +132,7 @@ function SongList({
                         <tr
                             {...rest}
                             className={className}
+                            onClick={() => onSelect?.(index)}
                             onDoubleClick={() => onPlay(songs[index])}
                         />
                     );

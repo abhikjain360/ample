@@ -111,6 +111,13 @@ export default function SearchPage() {
         [nav],
     );
 
+    const handleSelect = useCallback(
+        (index: number) => {
+            updateSelection(index, "auto");
+        },
+        [updateSelection],
+    );
+
     const handlePlay = useCallback(
         async (all: boolean = false) => {
             if (results.length === 0) return;
@@ -296,6 +303,7 @@ export default function SearchPage() {
                         currentSong={currentSong}
                         selectedIndex={selectedIndex}
                         onPlay={(song) => play(song, results)}
+                        onSelect={handleSelect}
                         virtuosoRef={virtuosoRef}
                         overscan={50}
                     />

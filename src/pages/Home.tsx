@@ -84,6 +84,13 @@ export default function Home() {
         [nav],
     );
 
+    const handleSelect = useCallback(
+        (index: number) => {
+            updateSelection(index, "auto");
+        },
+        [updateSelection],
+    );
+
     const handleAddSelectionToQueue = useCallback(() => {
         if (!songs) return;
         const song = songs[selectedIndex];
@@ -222,6 +229,7 @@ export default function Home() {
                         currentSong={currentSong}
                         selectedIndex={selectedIndex}
                         onPlay={(song) => play(song, songs)}
+                        onSelect={handleSelect}
                         virtuosoRef={virtuosoRef}
                         overscan={200}
                     />

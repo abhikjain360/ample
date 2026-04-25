@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { Home as HomeIcon, ListMusic, Search } from "lucide-react";
 import Welcome from "./pages/Welcome";
 import Home from "./pages/Home";
 import Queue from "./pages/Queue";
@@ -13,6 +14,40 @@ import { PlayerProvider } from "@/context/PlayerProvider";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Player } from "@/components/Player";
 import { useVim } from "@/hooks/useVim";
+
+function MobileNav({ location, setLocation }: { location: string; setLocation: (path: string) => void }) {
+    const tabs = [
+        { path: "/home", icon: HomeIcon, label: "Home" },
+        { path: "/queue", icon: ListMusic, label: "Queue" },
+        { path: "/search", icon: Search, label: "Search" },
+    ];
+
+    return (
+        <nav className="md:hidden border-t border-border bg-background/95 backdrop-blur-lg z-50">
+            <div className="flex items-center justify-around">
+                {tabs.map((tab) => {
+                    const isActive = location === tab.path;
+                    return (
+                        <button
+                            key={tab.path}
+                            onClick={() => setLocation(tab.path)}
+                            className={`flex flex-col items-center justify-center gap-0.5 py-2 px-4 flex-1 transition-colors ${
+                                isActive
+                                    ? "text-primary"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            aria-label={tab.label}
+                            aria-current={isActive ? "page" : undefined}
+                        >
+                            <tab.icon className="h-5 w-5" />
+                            <span className="text-[10px] font-medium">{tab.label}</span>
+                        </button>
+                    );
+                })}
+            </div>
+        </nav>
+    );
+}
 
 function AppContent() {
     const {
@@ -105,6 +140,7 @@ function AppContent() {
                 </Switch>
             </div>
             <Player />
+            <MobileNav location={location} setLocation={setLocation} />
             <Toaster />
         </div>
     );

@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useRef, useState } from "react";
-import { Play, Clock, Music } from "lucide-react";
+import { Play, Clock, Music, X } from "lucide-react";
 import { TableVirtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useVim, useVimNavigation } from "@/hooks/useVim";
 import { usePlayer } from "@/hooks/usePlayer";
@@ -66,17 +66,16 @@ export default function Queue() {
 
     const handlePlay = useCallback(() => {
         if (queue.length === 0) return;
-        // Play the selected song from the queue
         const song = queue[selectedIndex];
         if (song) {
+            setCurrentIndex(selectedIndex);
             play(song);
         }
-    }, [queue, selectedIndex, play]);
+    }, [queue, selectedIndex, play, setCurrentIndex]);
 
     const handleRemove = useCallback(() => {
         if (queue.length === 0) return;
         removeFromQueue(selectedIndex);
-        // If we remove the last item, select the new last item
         if (selectedIndex >= queue.length - 1) {
             setSelectedIndex(Math.max(0, queue.length - 2));
         }
@@ -84,21 +83,17 @@ export default function Queue() {
 
     const handleMoveDown = useCallback(() => {
         if (queue.length <= 1) return;
-        // Don't move if it's already at the bottom
         if (selectedIndex >= queue.length - 1) return;
 
         moveInQueue(selectedIndex, selectedIndex + 1);
-        // Select the moved item in its new position
         updateSelection(selectedIndex + 1, "down");
     }, [queue, selectedIndex, moveInQueue, updateSelection]);
 
     const handleMoveUp = useCallback(() => {
         if (queue.length <= 1) return;
-        // Don't move if it's already at the top
         if (selectedIndex <= 0) return;
 
         moveInQueue(selectedIndex, selectedIndex - 1);
-        // Select the moved item in its new position
         updateSelection(selectedIndex - 1, "up");
     }, [queue, selectedIndex, moveInQueue, updateSelection]);
 
@@ -222,18 +217,18 @@ export default function Queue() {
                                 <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
                                     Title
                                 </th>
-                                <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left">
+                                <th className="px-4 py-3 font-medium bg-muted/70 backdrop-blur-md text-left hidden sm:table-cell">
                                     Artist
                                 </th>
-                                <th className="px-4 py-3 font-medium text-right w-24 bg-muted/70 backdrop-blur-md">
+                                <th className="px-4 py-3 font-medium text-right w-24 bg-muted/70 backdrop-blur-md hidden sm:table-cell">
                                     <Clock className="h-3 w-3 inline-block" />
+                                </th>
+                                <th className="px-2 py-3 font-medium text-center w-16 bg-muted/70 backdrop-blur-md sm:hidden">
+                                    {/* Mobile actions header */}
                                 </th>
                             </tr>
                         )}
                         itemContent={(index, song) => {
-                            // Check if this specific instance in queue is playing.
-                            // Since queue can have duplicates?
-                            // Our logic relies on currentIndex.
                             const isPlayingCurrent = index === currentIndex;
 
                             const textColorClass = isPlayingCurrent
@@ -257,19 +252,34 @@ export default function Queue() {
                                         )}
                                     </td>
                                     <td
-                                        className={`px-4 py-3 font-medium truncate max-w-[30vw] ${textColorClass}`}
+                                        className={`px-4 py-3 font-medium truncate max-w-[50vw] sm:max-w-[30vw] ${textColorClass}`}
                                     >
                                         {song.title}
                                     </td>
                                     <td
-                                        className={`px-4 py-3 truncate max-w-[20vw] ${mutedTextClass}`}
+                                        className={`px-4 py-3 truncate max-w-[20vw] hidden sm:table-cell ${mutedTextClass}`}
                                     >
                                         {song.artist || "Unknown Artist"}
                                     </td>
                                     <td
-                                        className={`px-4 py-3 text-right font-mono text-xs w-24 ${mutedTextClass}`}
+                                        className={`px-4 py-3 text-right font-mono text-xs w-24 hidden sm:table-cell ${mutedTextClass}`}
                                     >
                                         {formatDuration(song.duration)}
+                                    </td>
+                                    {/* Mobile action buttons */}
+                                    <td className="px-2 py-3 text-center w-16 sm:hidden">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeFromQueue(index);
+                                                }}
+                                                className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                aria-label="Remove from queue"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </>
                             );
@@ -289,7 +299,7 @@ export default function Queue() {
                                 const { item: _item, ...rest } = props;
 
                                 let className =
-                                    "group cursor-default select-none border-l-2 ";
+                                    "group cursor-pointer select-none border-l-2 transition-colors active:bg-accent/50 ";
 
                                 if (isPlayingCurrent) {
                                     className += "border-l-chart-4 ";
@@ -309,9 +319,13 @@ export default function Queue() {
                                     <tr
                                         {...rest}
                                         className={className}
-                                        onDoubleClick={() =>
-                                            setCurrentIndex(index)
-                                        }
+                                        onClick={() => {
+                                            setSelectedIndex(index);
+                                        }}
+                                        onDoubleClick={() => {
+                                            setCurrentIndex(index);
+                                            play(queue[index]);
+                                        }}
                                     />
                                 );
                             },
