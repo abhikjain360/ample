@@ -15,7 +15,13 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { Player } from "@/components/Player";
 import { useVim } from "@/hooks/useVim";
 
-function MobileNav({ location, setLocation }: { location: string; setLocation: (path: string) => void }) {
+function MobileNav({
+    location,
+    setLocation,
+}: {
+    location: string;
+    setLocation: (path: string) => void;
+}) {
     const tabs = [
         { path: "/home", icon: HomeIcon, label: "Home" },
         { path: "/queue", icon: ListMusic, label: "Queue" },
@@ -40,7 +46,9 @@ function MobileNav({ location, setLocation }: { location: string; setLocation: (
                             aria-current={isActive ? "page" : undefined}
                         >
                             <tab.icon className="h-5 w-5" />
-                            <span className="text-[10px] font-medium">{tab.label}</span>
+                            <span className="text-[10px] font-medium">
+                                {tab.label}
+                            </span>
                         </button>
                     );
                 })}

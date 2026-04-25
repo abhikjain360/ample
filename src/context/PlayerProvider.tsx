@@ -111,36 +111,39 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         [playSong],
     );
 
-    const playAsNext = useCallback(async (song: SongData) => {
-        const { queue, currentIndex } = stateRef.current;
+    const playAsNext = useCallback(
+        async (song: SongData) => {
+            const { queue, currentIndex } = stateRef.current;
 
-        if (queue.length === 0 || currentIndex === -1) {
-            setQueueState([song]);
-            setCurrentIndexState(0);
-            await playSong(song);
-            return;
-        }
-
-        const existingIndex = queue.findIndex((s) => s.id === song.id);
-        const newQueue = [...queue];
-        let targetIndex = currentIndex + 1;
-
-        if (existingIndex !== -1) {
-            if (existingIndex === currentIndex) {
+            if (queue.length === 0 || currentIndex === -1) {
+                setQueueState([song]);
+                setCurrentIndexState(0);
                 await playSong(song);
                 return;
             }
-            newQueue.splice(existingIndex, 1);
-            if (existingIndex < currentIndex) {
-                targetIndex = currentIndex;
-            }
-        }
 
-        newQueue.splice(targetIndex, 0, song);
-        setQueueState(newQueue);
-        setCurrentIndexState(targetIndex);
-        await playSong(song);
-    }, [playSong]);
+            const existingIndex = queue.findIndex((s) => s.id === song.id);
+            const newQueue = [...queue];
+            let targetIndex = currentIndex + 1;
+
+            if (existingIndex !== -1) {
+                if (existingIndex === currentIndex) {
+                    await playSong(song);
+                    return;
+                }
+                newQueue.splice(existingIndex, 1);
+                if (existingIndex < currentIndex) {
+                    targetIndex = currentIndex;
+                }
+            }
+
+            newQueue.splice(targetIndex, 0, song);
+            setQueueState(newQueue);
+            setCurrentIndexState(targetIndex);
+            await playSong(song);
+        },
+        [playSong],
+    );
 
     const togglePlay = useCallback(async () => {
         // We rely on the hook's isPlaying state

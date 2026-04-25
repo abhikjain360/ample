@@ -18,8 +18,14 @@ export default function SearchPage() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
-    const { play, togglePlay, currentSong, addToQueue, shuffleAndPlay, playAsNext } =
-        usePlayer();
+    const {
+        play,
+        togglePlay,
+        currentSong,
+        addToQueue,
+        shuffleAndPlay,
+        playAsNext,
+    } = usePlayer();
     const [, setLocation] = useLocation();
 
     // Fetch songs

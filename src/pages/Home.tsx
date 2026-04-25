@@ -15,8 +15,14 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const { currentSong, togglePlay, play, addToQueue, shuffleAndPlay, playAsNext } =
-        usePlayer();
+    const {
+        currentSong,
+        togglePlay,
+        play,
+        addToQueue,
+        shuffleAndPlay,
+        playAsNext,
+    } = usePlayer();
 
     const [, setLocation] = useLocation();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
