@@ -1,11 +1,11 @@
 {
-  "plugins": ["react", "typescript"],
-  "rules": {
-    "react/react-in-jsx-scope": "off",
-    "react/rules-of-hooks": "error",
-    "react/exhaustive-deps": "warn",
-    "react/only-export-components": "warn",
-    "eslint/no-unused-vars": "warn"
-  },
-  "ignorePatterns": ["dist", "src-tauri", "node_modules"]
+    "plugins": ["react", "typescript"],
+    "rules": {
+        "react/react-in-jsx-scope": "off",
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/only-export-components": "warn",
+        "eslint/no-unused-vars": "warn"
+    },
+    "ignorePatterns": ["dist", "src-tauri", "node_modules"]
 }
