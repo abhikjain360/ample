@@ -5,11 +5,12 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "tsgo && vite build",
         "preview": "vite preview",
         "tauri": "tauri",
         "build:prod": "bun run tauri build && ./src-tauri/bundle-mpv.sh src-tauri/target/release/bundle/macos/ample.app",
         "lint": "oxlint .",
+        "tsgo": "tsgo --noEmit",
         "format": "prettier --write \"**/*.{json,ts,js,tsx,jsx,html,css}\" --ignore-path .gitignore",
         "format:check": "prettier --check \"**/*.{json,ts,js,tsx,jsx,html,css}\" --ignore-path .gitignore"
     },
@@ -38,6 +39,7 @@
         "@types/node": "^25.6.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "@typescript/native-preview": "^7.0.0-dev.20260425.1",
         "@vitejs/plugin-react": "^6.0.1",
         "oxlint": "^1.61.0",
         "prettier": "^3.8.3",
